@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>房間管理 & QR Code 產生器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root {
+  --blue:    #1a6fa8;
+  --blue-lt: #e8f3fb;
+  --teal:    #0e8f72;
+  --teal-lt: #e4f6f1;
+  --red:     #b83030;
+  --red-lt:  #fdeaea;
+  --amber:   #c47d0e;
+  --amber-lt:#fef4e0;
+  --border:  #dde4ed;
+  --bg:      #f4f7fb;
+  --white:   #ffffff;
+  --text:    #1a2332;
+  --muted:   #7a8799;
+  --radius:  12px;
+  --shadow:  0 2px 12px rgba(0,0,0,0.07);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Noto Sans TC',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ── top bar ── */
+.topbar {
+  background:var(--blue);
+  color:white;
+  padding:16px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.topbar-title { font-size:1rem; font-weight:700; }
+.topbar-sub   { font-size:0.75rem; opacity:0.75; margin-top:2px; }
+.save-btn {
+  padding:8px 18px;
+  background:rgba(255,255,255,0.2);
+  border:1.5px solid rgba(255,255,255,0.5);
+  border-radius:8px;
+  color:white;
+  font-family:inherit;
+  font-size:0.85rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.15s;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.save-btn:hover { background:rgba(255,255,255,0.3); }
+.save-btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* ── layout ── */
+.layout {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  padding:20px;
+  max-width:1100px;
+  margin:0 auto;
+}
+@media (max-width:700px) { .layout { grid-template-columns:1fr; } }
+
+.panel {
+  background:var(--white);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.panel-header {
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.panel-title { font-size:0.9rem; font-weight:700; }
+.panel-body  { padding:16px 18px; }
+
+/* ── room list ── */
+.room-list { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; min-height:40px; }
+.room-row {
+  display:grid;
+  grid-template-columns:1fr 1fr 36px;
+  gap:8px;
+  align-items:center;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+.room-row input {
+  padding:9px 11px;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  font-family:inherit;
+  font-size:0.83rem;
+  color:var(--text);
+  background:var(--bg);
+  transition:border-color 0.15s;
+  width:100%;
+}
+.room-row input:focus { outline:none; border-color:var(--blue); background:var(--white); }
+.room-row input::placeholder { color:var(--muted); }
+.del-btn {
+  width:36px; height:36px;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  background:none;
+  cursor:pointer;
+  color:var(--muted);
+  font-size:0.9rem;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.15s;
+  flex-shrink:0;
+}
+.del-btn:hover { border-color:var(--red); color:var(--red); background:var(--red-lt); }
+
+.col-labels {
+  display:grid;
+  grid-template-columns:1fr 1fr 36px;
+  gap:8px;
+  margin-bottom:6px;
+}
+.col-labels span {
+  font-size:0.7rem;
+  font-weight:700;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding-left:4px;
+}
+.add-btn {
+  width:100%;
+  padding:10px;
+  border:1.5px dashed var(--border);
+  border-radius:8px;
+  background:none;
+  font-family:inherit;
+  font-size:0.83rem;
+  color:var(--muted);
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.add-btn:hover { border-color:var(--blue); color:var(--blue); background:var(--blue-lt); }
+
+/* ── status bar ── */
+.status {
+  padding:8px 16px;
+  font-size:0.78rem;
+  border-top:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:var(--muted);
+  min-height:36px;
+}
+.status.ok     { color:var(--teal); }
+.status.err    { color:var(--red); }
+.status.saving { color:var(--amber); }
+.dot { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+.dot.pulse { animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── url設定 ── */
+.url-row {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:14px;
+}
+.url-row input {
+  flex:1;
+  padding:9px 11px;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  font-family:inherit;
+  font-size:0.8rem;
+  color:var(--text);
+  background:var(--bg);
+  transition:border-color 0.15s;
+}
+.url-row input:focus { outline:none; border-color:var(--blue); background:var(--white); }
+.gen-btn {
+  padding:9px 16px;
+  background:var(--blue);
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-family:inherit;
+  font-size:0.83rem;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:opacity 0.15s;
+}
+.gen-btn:hover { opacity:0.88; }
+
+/* ── qr grid ── */
+.qr-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(130px,1fr));
+  gap:12px;
+}
+.qr-card {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  padding:14px 10px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--white);
+  animation:fadeIn 0.25s ease;
+}
+.qr-name { font-size:0.8rem; font-weight:700; text-align:center; color:var(--text); }
+.qr-dl {
+  width:100%;
+  padding:5px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:none;
+  font-family:inherit;
+  font-size:0.72rem;
+  font-weight:500;
+  color:var(--blue);
+  cursor:pointer;
+  transition:all 0.15s;
+  text-align:center;
+}
+.qr-dl:hover { background:var(--blue-lt); border-color:var(--blue); }
+
+.empty-state {
+  text-align:center;
+  color:var(--muted);
+  font-size:0.85rem;
+  padding:32px 16px;
+}
+
+/* ── 載入畫面 ── */
+.loading-overlay {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:40px;
+  gap:14px;
+  color:var(--muted);
+  font-size:0.85rem;
+}
+.spinner {
+  width:28px; height:28px;
+  border:3px solid var(--border);
+  border-top-color:var(--blue);
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+@media print {
+  .topbar, .panel:first-child, .url-row, .gen-btn, .qr-dl { display:none !important; }
+  .layout { grid-template-columns:1fr; padding:0; }
+  .qr-grid { grid-template-columns:repeat(4,1fr); gap:16px; padding:16px; }
+  .qr-card { border:1px solid #ccc; break-inside:avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">🏥 房間管理 & QR Code 產生器</div>
+    <div class="topbar-sub">房間清單存在 Google Sheet，重整不會消失</div>
+  </div>
+  <button class="save-btn" id="save-btn" onclick="saveRooms()">
+    💾 儲存房間清單
+  </button>
+</div>
+
+<div class="layout">
+
+  <!-- 左：房間管理 -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">房間清單</div>
+      <span id="room-count" style="font-size:0.78rem;color:var(--muted)"></span>
+    </div>
+    <div class="panel-body" id="room-panel">
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+        從 Google Sheet 載入中…
+      </div>
+    </div>
+    <div class="status" id="status-bar">
+      <div class="dot"></div>
+      等待載入
+    </div>
+  </div>
+
+  <!-- 右：QR Code -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">QR Code 預覽</div>
+      <button onclick="window.print()" style="font-size:0.78rem;color:var(--blue);background:none;border:none;cursor:pointer;font-family:inherit;">🖨 列印全部</button>
+    </div>
+    <div class="panel-body">
+      <div class="url-row">
+        <input type="text" id="base-url" value="https://chiaoro.github.io/feedback-form/" placeholder="表單網址">
+        <button class="gen-btn" onclick="generateQR()">產生 QR</button>
+      </div>
+      <div class="qr-grid" id="qr-grid">
+        <div class="empty-state">先載入房間清單<br>再按「產生 QR」</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ★ 換成你的 Apps Script URL
+const SCRIPT_URL = "https://script.google.com/macros/s/這裡換成你的URL/exec";
+
+let rooms = [];
+
+// ── 頁面載入時：從 Sheet 讀取房間 ──
+window.addEventListener("DOMContentLoaded", loadRooms);
+
+function loadRooms() {
+  setStatus("saving", "從 Google Sheet 載入中…");
+  fetch(SCRIPT_URL + "?action=getRooms")
+    .then(r => r.json())
+    .then(data => {
+      if (data.status !== "ok") throw new Error(data.message);
+      rooms = data.rooms;
+      renderRoomList();
+      setStatus("ok", "載入完成，共 " + rooms.length + " 個房間");
+    })
+    .catch(err => {
+      setStatus("err", "載入失敗，請確認 SCRIPT_URL 是否正確");
+      // 載入失敗時顯示空清單讓使用者手動新增
+      rooms = [];
+      renderRoomList();
+    });
+}
+
+// ── 渲染房間清單 ──
+function renderRoomList() {
+  const panel = document.getElementById("room-panel");
+  panel.innerHTML = `
+    <div class="col-labels">
+      <span>房間代碼（英文）</span>
+      <span>顯示名稱</span>
+      <span></span>
+    </div>
+    <div class="room-list" id="room-list"></div>
+    <button class="add-btn" onclick="addRoom()">＋ 新增房間</button>
+  `;
+  const list = document.getElementById("room-list");
+  rooms.forEach((r, i) => appendRow(list, r.code, r.name, i));
+  updateCount();
+}
+
+function appendRow(list, code, name, idx) {
+  const row = document.createElement("div");
+  row.className = "room-row";
+  row.dataset.idx = idx;
+  row.innerHTML = `
+    <input type="text" class="room-code" placeholder="ward-301" value="${code}">
+    <input type="text" class="room-name" placeholder="病房 301" value="${name}">
+    <button class="del-btn" onclick="deleteRow(this)" title="刪除">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+function addRoom() {
+  const list = document.getElementById("room-list");
+  const idx = list.children.length;
+  appendRow(list, "", "", idx);
+  // 自動 focus 新增的那行
+  list.lastChild.querySelector(".room-code").focus();
+  updateCount();
+}
+
+function deleteRow(btn) {
+  btn.closest(".room-row").remove();
+  updateCount();
+}
+
+function updateCount() {
+  const n = document.getElementById("room-list").children.length;
+  document.getElementById("room-count").textContent = n + " 個";
+}
+
+// ── 收集目前清單 ──
+function collectRooms() {
+  const rows = document.querySelectorAll(".room-row");
+  const result = [];
+  rows.forEach(row => {
+    const code = row.querySelector(".room-code").value.trim();
+    const name = row.querySelector(".room-name").value.trim();
+    if (code && name) result.push({ code, name });
+  });
+  return result;
+}
+
+// ── 儲存到 Google Sheet ──
+function saveRooms() {
+  const data = collectRooms();
+  if (data.length === 0) { setStatus("err", "請至少填寫一個房間"); return; }
+
+  const btn = document.getElementById("save-btn");
+  btn.disabled = true;
+  setStatus("saving", "儲存中…");
+
+  const formData = new FormData();
+  formData.append("action", "saveRooms");
+  formData.append("rooms", JSON.stringify(data));
+
+  fetch(SCRIPT_URL, { method: "POST", body: formData })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status !== "ok") throw new Error(res.message);
+      rooms = data;
+      setStatus("ok", "✓ 已儲存 " + data.length + " 個房間到 Google Sheet");
+    })
+    .catch(() => {
+      setStatus("err", "儲存失敗，請重試");
+    })
+    .finally(() => {
+      btn.disabled = false;
+    });
+}
+
+// ── 產生 QR Code ──
+function generateQR() {
+  const data    = collectRooms();
+  const baseUrl = document.getElementById("base-url").value.trim().replace(/\/?$/, "/");
+  const grid    = document.getElementById("qr-grid");
+  grid.innerHTML = "";
+
+  if (data.length === 0) {
+    grid.innerHTML = '<div class="empty-state">請先新增房間</div>';
+    return;
+  }
+
+  data.forEach(r => {
+    const url  = baseUrl + "?room=" + encodeURIComponent(r.code);
+    const card = document.createElement("div");
+    card.className = "qr-card";
+
+    const qrDiv = document.createElement("div");
+    new QRCode(qrDiv, {
+      text: url, width: 110, height: 110,
+      colorDark: "#1a2332", colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "qr-name";
+    nameEl.textContent = r.name;
+
+    const dlBtn = document.createElement("button");
+    dlBtn.className = "qr-dl";
+    dlBtn.textContent = "⬇ 下載";
+    dlBtn.onclick = () => {
+      setTimeout(() => {
+        const canvas = qrDiv.querySelector("canvas");
+        if (!canvas) return;
+        const a = document.createElement("a");
+        a.download = "QR_" + r.code + ".png";
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+      }, 100);
+    };
+
+    card.appendChild(qrDiv);
+    card.appendChild(nameEl);
+    card.appendChild(dlBtn);
+    grid.appendChild(card);
+  });
+}
+
+// ── 狀態列 ──
+function setStatus(type, msg) {
+  const bar = document.getElementById("status-bar");
+  bar.className = "status " + type;
+  bar.innerHTML = `<div class="dot ${type === 'saving' ? 'pulse' : ''}"></div>${msg}`;
+}
+</script>
+</body>
+</html>
