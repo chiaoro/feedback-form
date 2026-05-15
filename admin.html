@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>醫院回饋後台</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1a6fa8;--blue-d:#145585;--blue-lt:#e8f3fb;
+  --teal:#0e8f72;--teal-lt:#e4f6f1;
+  --amber:#c47d0e;--amber-lt:#fef4e0;
+  --red:#b83030;--red-lt:#fdeaea;
+  --green:#2a7a50;--green-lt:#e6f4ed;
+  --gray:#5a6575;
+  --border:#dde4ed;--bg:#f0f4f9;--white:#fff;--text:#1a2332;--muted:#7a8799;
+  --radius:10px;--shadow:0 2px 10px rgba(0,0,0,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── LOGIN ── */
+#login-page{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.login-card{
+  background:var(--white);border-radius:16px;box-shadow:var(--shadow);
+  padding:36px 32px;width:100%;max-width:360px;
+}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo-icon{
+  width:56px;height:56px;background:var(--blue-lt);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 12px;
+}
+.login-logo h1{font-size:1.1rem;font-weight:700;color:var(--text)}
+.login-logo p{font-size:0.8rem;color:var(--muted);margin-top:4px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:0.78rem;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase}
+.field input{
+  width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;
+  font-family:inherit;font-size:0.95rem;color:var(--text);background:var(--bg);
+  transition:border-color .2s;
+}
+.field input:focus{outline:none;border-color:var(--blue);background:var(--white)}
+.login-btn{
+  width:100%;padding:14px;background:var(--blue);color:white;border:none;
+  border-radius:8px;font-family:inherit;font-size:0.95rem;font-weight:700;
+  cursor:pointer;margin-top:6px;transition:opacity .2s;
+}
+.login-btn:hover{opacity:.9}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-err{
+  background:var(--red-lt);color:var(--red);border-radius:8px;padding:10px 14px;
+  font-size:0.82rem;margin-top:12px;display:none;
+}
+
+/* ── MAIN ── */
+#main-page{display:none;min-height:100vh;flex-direction:column}
+
+.topbar{
+  background:var(--blue);color:white;padding:0 20px;
+  display:flex;align-items:center;height:54px;gap:16px;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-title{font-size:0.95rem;font-weight:700;flex:1}
+.topbar-role{
+  font-size:0.78rem;background:rgba(255,255,255,.18);
+  padding:4px 12px;border-radius:999px;
+}
+.logout-btn{
+  font-size:0.78rem;background:none;border:1px solid rgba(255,255,255,.4);
+  color:white;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit;
+  transition:background .15s;
+}
+.logout-btn:hover{background:rgba(255,255,255,.15)}
+
+.nav-tabs{
+  background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;padding:0 20px;
+}
+.tab-btn{
+  padding:12px 16px;font-size:0.85rem;font-weight:500;color:var(--muted);
+  border:none;background:none;cursor:pointer;font-family:inherit;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;
+}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+.content{padding:20px;flex:1}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px}
+.stat-label{font-size:0.75rem;color:var(--muted);margin-bottom:6px;font-weight:500}
+.stat-val{font-size:1.7rem;font-weight:700}
+.sv-red{color:var(--red)}.sv-amber{color:var(--amber)}.sv-green{color:var(--green)}.sv-blue{color:var(--blue)}
+
+/* ── FILTER BAR ── */
+.filter-bar{
+  background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:12px 14px;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.filter-chip{
+  padding:5px 12px;border-radius:999px;font-size:0.78rem;font-weight:500;
+  border:1.5px solid var(--border);color:var(--muted);background:none;
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.filter-chip.active-all     {background:var(--blue-lt);color:var(--blue);border-color:var(--blue)}
+.filter-chip.active-wait    {background:var(--red-lt);color:var(--red);border-color:var(--red)}
+.filter-chip.active-doing   {background:var(--amber-lt);color:var(--amber);border-color:var(--amber)}
+.filter-chip.active-done    {background:var(--green-lt);color:var(--green);border-color:var(--green)}
+.filter-chip.active-type    {background:var(--blue-lt);color:var(--blue);border-color:var(--blue)}
+.spacer{flex:1}
+.refresh-btn{
+  padding:6px 14px;border-radius:8px;font-size:0.78rem;font-weight:500;
+  border:1.5px solid var(--border);color:var(--muted);background:none;
+  cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;
+  transition:all .15s;
+}
+.refresh-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── RECORDS TABLE ── */
+.table-wrap{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{
+  background:#f5f8fc;font-size:0.75rem;font-weight:700;color:var(--muted);
+  padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);
+  white-space:nowrap;letter-spacing:.04em;
+}
+td{padding:11px 12px;border-bottom:1px solid var(--border);font-size:0.83rem;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafcff}
+
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:0.72rem;font-weight:700}
+.b-wait  {background:var(--red-lt);   color:var(--red)}
+.b-doing {background:var(--amber-lt); color:var(--amber)}
+.b-done  {background:var(--green-lt); color:var(--green)}
+.b-clean {background:var(--teal-lt);  color:var(--teal)}
+.b-fix   {background:var(--blue-lt);  color:var(--blue)}
+.b-urg   {background:var(--red-lt);   color:var(--red)}
+.b-other {background:#f0f2f5;         color:var(--gray)}
+
+.status-select{
+  padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;
+  font-family:inherit;font-size:0.78rem;color:var(--text);background:var(--bg);
+  cursor:pointer;transition:border-color .15s;
+}
+.status-select:focus{outline:none;border-color:var(--blue)}
+.status-select.s-wait  {border-color:var(--red);   color:var(--red);   background:var(--red-lt)}
+.status-select.s-doing {border-color:var(--amber); color:var(--amber); background:var(--amber-lt)}
+.status-select.s-done  {border-color:var(--green); color:var(--green); background:var(--green-lt)}
+
+.action-btn{
+  padding:4px 12px;border-radius:6px;font-size:0.75rem;font-weight:700;
+  border:1.5px solid;cursor:pointer;font-family:inherit;transition:all .15s;
+  white-space:nowrap;
+}
+.btn-accept{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+.btn-accept:hover{background:var(--blue);color:white}
+.btn-done{border-color:var(--green);color:var(--green);background:var(--green-lt)}
+.btn-done:hover{background:var(--green);color:white}
+
+.empty-row td{text-align:center;color:var(--muted);padding:32px;font-size:0.85rem}
+
+/* ── ROOMS TAB ── */
+.rooms-panel{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.rooms-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.rooms-title{font-size:0.9rem;font-weight:700}
+.rooms-body{padding:16px 18px}
+.col-labels{display:grid;grid-template-columns:1fr 1fr 36px;gap:8px;margin-bottom:8px}
+.col-labels span{font-size:0.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-left:4px}
+.room-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.room-row{display:grid;grid-template-columns:1fr 1fr 36px;gap:8px;align-items:center}
+.room-row input{
+  padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;
+  font-family:inherit;font-size:0.83rem;color:var(--text);background:var(--bg);
+  width:100%;transition:border-color .15s;
+}
+.room-row input:focus{outline:none;border-color:var(--blue);background:var(--white)}
+.room-row input::placeholder{color:var(--muted)}
+.del-btn{
+  width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;
+  background:none;cursor:pointer;color:var(--muted);font-size:.9rem;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.del-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
+.add-room-btn{
+  width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:8px;
+  background:none;font-family:inherit;font-size:0.83rem;color:var(--muted);
+  cursor:pointer;transition:all .15s;
+}
+.add-room-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+.save-rooms-btn{
+  padding:10px 24px;background:var(--blue);color:white;border:none;border-radius:8px;
+  font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;
+  margin-top:14px;transition:opacity .15s;
+}
+.save-rooms-btn:hover{opacity:.9}
+
+/* ── ADMIN TAB ── */
+.admin-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.admin-title{font-size:0.9rem;font-weight:700;margin-bottom:14px}
+.pw-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pw-field input{
+  width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;
+  font-family:inherit;font-size:0.85rem;color:var(--text);background:var(--bg);
+  transition:border-color .15s;margin-top:5px;
+}
+.pw-field input:focus{outline:none;border-color:var(--blue);background:var(--white)}
+.pw-field label{font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.pw-btn{
+  margin-top:12px;padding:10px 20px;background:var(--blue);color:white;border:none;
+  border-radius:8px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;
+}
+.pw-msg{margin-top:10px;font-size:0.82rem;padding:8px 12px;border-radius:8px;display:none}
+.pw-msg.ok{background:var(--green-lt);color:var(--green)}
+.pw-msg.err{background:var(--red-lt);color:var(--red)}
+
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;gap:12px;color:var(--muted)}
+.spinner{width:22px;height:22px;border:2.5px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--text);color:white;padding:10px 20px;border-radius:8px;
+  font-size:0.85rem;font-weight:500;z-index:999;
+  transition:transform .3s ease;pointer-events:none;white-space:nowrap;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok-toast{background:var(--green)}
+.toast.err-toast{background:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- ── 登入頁面 ── -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🏥</div>
+      <h1>醫院回饋後台</h1>
+      <p>請使用分配的帳號登入</p>
+    </div>
+    <div class="field">
+      <label>帳號</label>
+      <input type="text" id="username" placeholder="輸入帳號" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>密碼</label>
+      <input type="password" id="password" placeholder="輸入密碼" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">登入</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ── 主畫面 ── -->
+<div id="main-page">
+  <div class="topbar">
+    <div class="topbar-title">🏥 醫院回饋後台</div>
+    <div class="topbar-role" id="role-badge"></div>
+    <button class="logout-btn" onclick="logout()">登出</button>
+  </div>
+
+  <div class="nav-tabs" id="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('records',this)">回饋管理</button>
+    <button class="tab-btn" onclick="switchTab('rooms',this)" id="rooms-tab-btn">房間管理</button>
+    <button class="tab-btn" onclick="switchTab('admin',this)" id="admin-tab-btn" style="display:none">帳號管理</button>
+  </div>
+
+  <!-- 回饋管理 -->
+  <div class="content" id="tab-records">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">待處理</div><div class="stat-val sv-red" id="cnt-wait">—</div></div>
+      <div class="stat-card"><div class="stat-label">處理中</div><div class="stat-val sv-amber" id="cnt-doing">—</div></div>
+      <div class="stat-card"><div class="stat-label">已完成</div><div class="stat-val sv-green" id="cnt-done">—</div></div>
+      <div class="stat-card"><div class="stat-label">全部</div><div class="stat-val sv-blue" id="cnt-all">—</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-chip active-all" data-filter="all" onclick="setFilter('all',this)">全部</button>
+      <button class="filter-chip" data-filter="待處理" onclick="setFilter('待處理',this)">待處理</button>
+      <button class="filter-chip" data-filter="處理中" onclick="setFilter('處理中',this)">處理中</button>
+      <button class="filter-chip" data-filter="已完成" onclick="setFilter('已完成',this)">已完成</button>
+      <span style="width:1px;height:16px;background:var(--border);display:inline-block;margin:0 2px"></span>
+      <button class="filter-chip" data-filter="清潔" onclick="setTypeFilter('清潔',this)">清潔</button>
+      <button class="filter-chip" data-filter="維修" onclick="setTypeFilter('維修',this)">維修</button>
+      <button class="filter-chip" data-filter="緊急" onclick="setTypeFilter('緊急',this)">緊急</button>
+      <div class="spacer"></div>
+      <button class="refresh-btn" onclick="loadRecords()">↻ 重新整理</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>時間</th><th>地點</th><th>類型</th><th>說明</th>
+              <th>狀態</th><th>負責</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="records-body">
+            <tr class="empty-row"><td colspan="7">
+              <div class="loading"><div class="spinner"></div>載入中…</div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 房間管理 -->
+  <div class="content" id="tab-rooms" style="display:none">
+    <div class="rooms-panel">
+      <div class="rooms-header">
+        <div class="rooms-title">房間清單</div>
+        <span id="room-count-label" style="font-size:0.78rem;color:var(--muted)"></span>
+      </div>
+      <div class="rooms-body">
+        <div class="col-labels">
+          <span>房間代碼（英文）</span><span>顯示名稱</span><span></span>
+        </div>
+        <div class="room-list" id="room-list">
+          <div class="loading"><div class="spinner"></div>載入中…</div>
+        </div>
+        <button class="add-room-btn" onclick="addRoomRow()">＋ 新增房間</button>
+        <div><button class="save-rooms-btn" onclick="saveRooms()">💾 儲存房間清單</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 帳號管理（僅 admin） -->
+  <div class="content" id="tab-admin" style="display:none">
+    <div class="admin-card">
+      <div class="admin-title">修改帳號密碼</div>
+      <div class="pw-grid">
+        <div class="pw-field">
+          <label>管理員密碼（確認身份）</label>
+          <input type="password" id="admin-confirm-pw" placeholder="你自己的密碼">
+        </div>
+        <div class="pw-field">
+          <label>要修改的帳號</label>
+          <input type="text" id="target-user" placeholder="clean / repair / admin">
+        </div>
+        <div class="pw-field">
+          <label>新密碼</label>
+          <input type="password" id="new-pw" placeholder="輸入新密碼">
+        </div>
+      </div>
+      <button class="pw-btn" onclick="changePassword()">更新密碼</button>
+      <div class="pw-msg" id="pw-msg"></div>
+    </div>
+    <div class="admin-card" style="font-size:0.83rem;color:var(--muted);line-height:1.8">
+      <div class="admin-title">預設帳號</div>
+      帳號 <b>admin</b> / 密碼 admin123 → 管理員（看全部）<br>
+      帳號 <b>clean</b> / 密碼 clean123 → 清潔組（只看清潔類）<br>
+      帳號 <b>repair</b> / 密碼 repair123 → 維修組（只看維修類）<br>
+      <span style="color:var(--red);font-size:0.78rem">⚠ 請盡快修改預設密碼！</span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ★ 換成你的 Apps Script URL
+const SCRIPT_URL = "https://script.google.com/macros/s/這裡換成你的URL/exec";
+
+let currentRole  = "";
+let currentUser  = "";
+let allRecords   = [];
+let statusFilter = "all";
+let typeFilter   = "";
+
+// ── 登入 ──────────────────────────────────────────────────────
+function doLogin() {
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  const err  = document.getElementById("login-err");
+  const btn  = document.getElementById("login-btn");
+  if (!user || !pass) { showLoginErr("請輸入帳號和密碼"); return; }
+  btn.disabled = true; btn.textContent = "登入中…";
+  err.style.display = "none";
+
+  const fd = new FormData();
+  fd.append("action","login"); fd.append("username",user); fd.append("password",pass);
+  fetch(SCRIPT_URL,{method:"POST",body:fd})
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status!=="ok") throw new Error(data.message||"登入失敗");
+      currentRole = data.role;
+      currentUser = user;
+      sessionStorage.setItem("role", data.role);
+      sessionStorage.setItem("user", user);
+      sessionStorage.setItem("label", data.label);
+      enterMain(data.role, data.label);
+    })
+    .catch(e=>{ showLoginErr(e.message); btn.disabled=false; btn.textContent="登入"; });
+}
+function showLoginErr(msg){ const e=document.getElementById("login-err"); e.textContent=msg; e.style.display="block"; }
+
+// ── 進入主畫面 ────────────────────────────────────────────────
+function enterMain(role, label) {
+  document.getElementById("login-page").style.display = "none";
+  const mp = document.getElementById("main-page");
+  mp.style.display = "flex";
+  document.getElementById("role-badge").textContent = label;
+
+  // 管理員才看得到帳號管理
+  if (role === "admin") {
+    document.getElementById("admin-tab-btn").style.display = "";
+  }
+  // 非管理員隱藏房間管理
+  if (role !== "admin") {
+    document.getElementById("rooms-tab-btn").style.display = "none";
+  }
+  loadRecords();
+}
+
+// ── 登出 ──────────────────────────────────────────────────────
+function logout() {
+  sessionStorage.clear();
+  currentRole = ""; currentUser = "";
+  document.getElementById("main-page").style.display = "none";
+  document.getElementById("login-page").style.display = "flex";
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
+  document.getElementById("login-err").style.display = "none";
+  document.getElementById("login-btn").disabled = false;
+  document.getElementById("login-btn").textContent = "登入";
+}
+
+// ── 切換分頁 ──────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  ["records","rooms","admin"].forEach(t=>{
+    document.getElementById("tab-"+t).style.display = t===tab?"block":"none";
+  });
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  if (tab==="rooms") loadRooms();
+}
+
+// ── 載入回饋記錄 ──────────────────────────────────────────────
+function loadRecords() {
+  document.getElementById("records-body").innerHTML =
+    '<tr class="empty-row"><td colspan="7"><div class="loading"><div class="spinner"></div>載入中…</div></td></tr>';
+  fetch(SCRIPT_URL+"?action=getRecords&role="+encodeURIComponent(currentRole))
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status!=="ok") throw new Error();
+      allRecords = data.records;
+      renderRecords();
+    })
+    .catch(()=>{ showToast("載入失敗，請重試","err"); });
+}
+
+function renderRecords() {
+  // 計算統計
+  let wait=0,doing=0,done=0;
+  allRecords.forEach(r=>{
+    if(r.status==="待處理")wait++;
+    else if(r.status==="處理中")doing++;
+    else if(r.status==="已完成")done++;
+  });
+  document.getElementById("cnt-wait").textContent  = wait;
+  document.getElementById("cnt-doing").textContent = doing;
+  document.getElementById("cnt-done").textContent  = done;
+  document.getElementById("cnt-all").textContent   = allRecords.length;
+
+  // 篩選
+  let filtered = allRecords.filter(r=>{
+    const statusOk = statusFilter==="all" || r.status===statusFilter;
+    const typeOk   = !typeFilter || r.type.indexOf(typeFilter)!==-1;
+    return statusOk && typeOk;
+  });
+
+  const tbody = document.getElementById("records-body");
+  if (filtered.length===0) {
+    tbody.innerHTML='<tr class="empty-row"><td colspan="7">沒有符合的記錄</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r=>{
+    const typeCls = r.type.indexOf("清潔")!==-1?"b-clean":
+                    r.type.indexOf("維修")!==-1?"b-fix":
+                    r.type.indexOf("緊急")!==-1?"b-urg":"b-other";
+    const statCls = r.status==="待處理"?"s-wait":r.status==="處理中"?"s-doing":"s-done";
+
+    // 操作按鈕
+    let actions = "";
+    if(r.status==="待處理"){
+      actions=`<button class="action-btn btn-accept" onclick="updateStatus(${r.row},'處理中',this)">接受處理</button>
+               <button class="action-btn btn-done"   onclick="updateStatus(${r.row},'已完成',this)" style="margin-left:4px">完成</button>`;
+    } else if(r.status==="處理中"){
+      actions=`<button class="action-btn btn-done" onclick="updateStatus(${r.row},'已完成',this)">標記完成</button>`;
+    } else {
+      actions=`<span style="font-size:0.75rem;color:var(--muted)">已結案</span>`;
+    }
+
+    return `<tr>
+      <td style="color:var(--muted);white-space:nowrap">${r.time}</td>
+      <td style="white-space:nowrap">${r.roomName||r.roomCode}</td>
+      <td><span class="badge ${typeCls}">${r.type}</span></td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.message}">${r.message}</td>
+      <td><select class="status-select ${statCls}" onchange="updateStatus(${r.row},this.value,this)">
+        <option ${r.status==="待處理"?"selected":""}>待處理</option>
+        <option ${r.status==="處理中"?"selected":""}>處理中</option>
+        <option ${r.status==="已完成"?"selected":""}>已完成</option>
+      </select></td>
+      <td style="color:var(--muted)">${r.owner}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join("");
+}
+
+// ── 篩選 ──────────────────────────────────────────────────────
+function setFilter(val, btn) {
+  statusFilter = val;
+  const cls = val==="all"?"active-all":val==="待處理"?"active-wait":val==="處理中"?"active-doing":"active-done";
+  document.querySelectorAll("[data-filter]").forEach(b=>{
+    if(["all","待處理","處理中","已完成"].includes(b.dataset.filter)) b.className="filter-chip";
+  });
+  btn.classList.add(cls);
+  renderRecords();
+}
+function setTypeFilter(val, btn) {
+  if(typeFilter===val){ typeFilter=""; btn.className="filter-chip"; }
+  else{ typeFilter=val; document.querySelectorAll("[data-filter]").forEach(b=>{ if(["清潔","維修","緊急"].includes(b.dataset.filter)) b.className="filter-chip"; }); btn.classList.add("active-type"); }
+  renderRecords();
+}
+
+// ── 更新狀態 ──────────────────────────────────────────────────
+function updateStatus(row, status, el) {
+  if(el) el.disabled = true;
+  const fd = new FormData();
+  fd.append("action","updateStatus");
+  fd.append("row", row);
+  fd.append("status", status);
+  fd.append("role", currentRole);
+  fetch(SCRIPT_URL,{method:"POST",body:fd})
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status!=="ok") throw new Error();
+      showToast("狀態已更新為「"+status+"」","ok");
+      loadRecords();
+    })
+    .catch(()=>{ showToast("更新失敗，請重試","err"); if(el) el.disabled=false; });
+}
+
+// ── 房間管理 ──────────────────────────────────────────────────
+function loadRooms() {
+  document.getElementById("room-list").innerHTML='<div class="loading"><div class="spinner"></div>載入中…</div>';
+  fetch(SCRIPT_URL+"?action=getRooms")
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status!=="ok") throw new Error();
+      const list = document.getElementById("room-list");
+      list.innerHTML="";
+      data.rooms.forEach(r=>appendRoomRow(r.code,r.name));
+      updateRoomCount();
+    })
+    .catch(()=>showToast("房間載入失敗","err"));
+}
+function appendRoomRow(code="",name=""){
+  const list=document.getElementById("room-list");
+  const row=document.createElement("div");
+  row.className="room-row";
+  row.innerHTML=`<input type="text" class="room-code" placeholder="ward-301" value="${code}">
+    <input type="text" class="room-name" placeholder="病房 301" value="${name}">
+    <button class="del-btn" onclick="this.closest('.room-row').remove();updateRoomCount()">✕</button>`;
+  list.appendChild(row);
+}
+function addRoomRow(){ appendRoomRow(); updateRoomCount(); document.getElementById("room-list").lastChild.querySelector(".room-code").focus(); }
+function updateRoomCount(){ document.getElementById("room-count-label").textContent=document.querySelectorAll(".room-row").length+" 個"; }
+function saveRooms(){
+  const rooms=[...document.querySelectorAll(".room-row")].map(r=>({
+    code:r.querySelector(".room-code").value.trim(),
+    name:r.querySelector(".room-name").value.trim()
+  })).filter(r=>r.code&&r.name);
+  if(!rooms.length){showToast("請至少填寫一個房間","err");return;}
+  const fd=new FormData();
+  fd.append("action","saveRooms"); fd.append("rooms",JSON.stringify(rooms));
+  fetch(SCRIPT_URL,{method:"POST",body:fd}).then(r=>r.json()).then(d=>{
+    if(d.status!=="ok")throw new Error();
+    showToast("房間清單已儲存 ✓","ok");
+  }).catch(()=>showToast("儲存失敗","err"));
+}
+
+// ── 帳號管理 ──────────────────────────────────────────────────
+function changePassword(){
+  const adminPw=document.getElementById("admin-confirm-pw").value.trim();
+  const target =document.getElementById("target-user").value.trim();
+  const newPw  =document.getElementById("new-pw").value.trim();
+  const msg    =document.getElementById("pw-msg");
+  if(!adminPw||!target||!newPw){showPwMsg("err","請填寫全部欄位");return;}
+  const fd=new FormData();
+  fd.append("action","changePassword");
+  fd.append("adminUser",currentUser); fd.append("adminPass",adminPw);
+  fd.append("targetUser",target); fd.append("newPass",newPw);
+  fetch(SCRIPT_URL,{method:"POST",body:fd}).then(r=>r.json()).then(d=>{
+    if(d.status!=="ok")throw new Error(d.message);
+    showPwMsg("ok","密碼已更新！");
+    document.getElementById("admin-confirm-pw").value="";
+    document.getElementById("new-pw").value="";
+  }).catch(e=>showPwMsg("err",e.message||"更新失敗"));
+}
+function showPwMsg(type,msg){
+  const el=document.getElementById("pw-msg");
+  el.className="pw-msg "+type; el.textContent=msg; el.style.display="block";
+  setTimeout(()=>el.style.display="none",4000);
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(msg, type="ok"){
+  const t=document.getElementById("toast");
+  t.textContent=msg;
+  t.className="toast "+(type==="ok"?"ok-toast":"err-toast")+" show";
+  setTimeout(()=>t.classList.remove("show"),2500);
+}
+
+// ── 自動恢復登入（同一頁面 session）─────────────────────────
+window.addEventListener("DOMContentLoaded",()=>{
+  const role  = sessionStorage.getItem("role");
+  const user  = sessionStorage.getItem("user");
+  const label = sessionStorage.getItem("label");
+  if(role && user){ currentRole=role; currentUser=user; enterMain(role,label); }
+});
+</script>
+</body>
+</html>
