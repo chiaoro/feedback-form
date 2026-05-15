@@ -5,10 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>意見回饋</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<!-- ★ 從同一份 rooms.js 讀取房間清單 -->
+<script src="rooms.js"></script>
 <style>
-  /* ── 設定區：把這行換成你的 Apps Script URL ── */
-  /* 在 JS 裡面改 SCRIPT_URL 那行 */
-
   :root {
     --blue:    #1a6fa8;
     --blue-lt: #e8f3fb;
@@ -26,9 +25,7 @@
     --muted:   #7a8799;
     --radius:  14px;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
   body {
     font-family: 'Noto Sans TC', sans-serif;
     background: var(--bg);
@@ -37,8 +34,6 @@
     display: flex;
     flex-direction: column;
   }
-
-  /* ── HEADER ── */
   .header {
     background: var(--blue);
     color: white;
@@ -54,26 +49,9 @@
     background: var(--bg);
     border-radius: 50% 50% 0 0 / 100% 100% 0 0;
   }
-  .header-label {
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    opacity: 0.7;
-    margin-bottom: 6px;
-  }
-  .header-room {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-  .header-sub {
-    font-size: 0.82rem;
-    opacity: 0.75;
-    margin-top: 4px;
-  }
-
-  /* ── CARD ── */
+  .header-label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
+  .header-room  { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+  .header-sub   { font-size: 0.82rem; opacity: 0.75; margin-top: 4px; }
   .card {
     background: var(--white);
     border-radius: var(--radius);
@@ -82,254 +60,109 @@
     margin: 0 16px 16px;
   }
   .card:first-of-type { margin-top: -8px; }
-
-  .card-title {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
-  }
-
-  /* ── TYPE SELECTOR ── */
-  .type-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
+  .card-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .type-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
     padding: 16px 8px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    background: none;
-    cursor: pointer;
+    border: 2px solid var(--border); border-radius: 12px;
+    background: none; cursor: pointer;
     transition: all 0.18s ease;
     font-family: inherit;
-    position: relative;
   }
-  .type-btn .icon {
-    font-size: 1.8rem;
-    line-height: 1;
-  }
-  .type-btn .label {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text);
-  }
-  .type-btn .desc {
-    font-size: 0.7rem;
-    color: var(--muted);
-    text-align: center;
-    line-height: 1.3;
-  }
-  .type-btn.selected-clean {
-    border-color: var(--teal);
-    background: var(--teal-lt);
-  }
+  .type-btn .icon  { font-size: 1.8rem; line-height: 1; }
+  .type-btn .label { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+  .type-btn .desc  { font-size: 0.7rem; color: var(--muted); text-align: center; line-height: 1.3; }
+  .type-btn.selected-clean     { border-color: var(--teal);  background: var(--teal-lt); }
   .type-btn.selected-clean .label { color: var(--teal); }
-  .type-btn.selected-repair {
-    border-color: var(--blue);
-    background: var(--blue-lt);
-  }
+  .type-btn.selected-repair    { border-color: var(--blue);  background: var(--blue-lt); }
   .type-btn.selected-repair .label { color: var(--blue); }
-  .type-btn.selected-complaint {
-    border-color: var(--amber);
-    background: var(--amber-lt);
-  }
+  .type-btn.selected-complaint { border-color: var(--amber); background: var(--amber-lt); }
   .type-btn.selected-complaint .label { color: var(--amber); }
-  .type-btn.selected-other {
-    border-color: var(--gray);
-    background: #f0f2f5;
-  }
+  .type-btn.selected-other     { border-color: var(--gray);  background: #f0f2f5; }
   .type-btn.selected-other .label { color: var(--gray); }
-
-  /* ── URGENCY ── */
-  .urgency-row {
-    display: flex;
-    gap: 8px;
-  }
+  .urgency-row { display: flex; gap: 8px; }
   .urgency-btn {
-    flex: 1;
-    padding: 10px 6px;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    background: none;
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-align: center;
+    flex: 1; padding: 10px 6px;
+    border: 2px solid var(--border); border-radius: 10px;
+    background: none; font-family: inherit; font-size: 0.8rem; font-weight: 500;
+    color: var(--muted); cursor: pointer; transition: all 0.15s ease; text-align: center;
   }
   .urgency-btn.sel-normal   { border-color: var(--teal);  background: var(--teal-lt);  color: var(--teal); }
   .urgency-btn.sel-urgent   { border-color: var(--amber); background: var(--amber-lt); color: var(--amber); }
   .urgency-btn.sel-critical { border-color: var(--red);   background: var(--red-lt);   color: var(--red); }
-
-  /* ── TEXTAREA ── */
   textarea {
-    width: 100%;
-    min-height: 110px;
-    padding: 14px;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    font-family: inherit;
-    font-size: 0.95rem;
-    color: var(--text);
-    background: var(--bg);
-    resize: none;
-    transition: border-color 0.2s;
-    line-height: 1.6;
+    width: 100%; min-height: 110px; padding: 14px;
+    border: 2px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 0.95rem; color: var(--text);
+    background: var(--bg); resize: none; transition: border-color 0.2s; line-height: 1.6;
     -webkit-appearance: none;
   }
-  textarea:focus {
-    outline: none;
-    border-color: var(--blue);
-    background: var(--white);
-  }
+  textarea:focus { outline: none; border-color: var(--blue); background: var(--white); }
   textarea::placeholder { color: var(--muted); }
-
-  .char-count {
-    text-align: right;
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-top: 6px;
-  }
-
-  /* ── SUBMIT ── */
+  .char-count { text-align: right; font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
   .submit-wrap { padding: 0 16px 32px; }
   .submit-btn {
-    width: 100%;
-    padding: 18px;
-    background: var(--blue);
-    color: white;
-    border: none;
-    border-radius: 14px;
-    font-family: inherit;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    letter-spacing: 0.04em;
-    position: relative;
-    overflow: hidden;
+    width: 100%; padding: 18px;
+    background: var(--blue); color: white; border: none; border-radius: 14px;
+    font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: all 0.2s ease; letter-spacing: 0.04em; position: relative; overflow: hidden;
   }
   .submit-btn:active { transform: scale(0.98); }
   .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .submit-btn.loading { color: transparent; }
   .submit-btn.loading::after {
-    content: '';
-    position: absolute;
+    content: ''; position: absolute;
     width: 22px; height: 22px;
-    border: 3px solid rgba(255,255,255,0.4);
-    border-top-color: white;
-    border-radius: 50%;
-    top: 50%; left: 50%;
+    border: 3px solid rgba(255,255,255,0.4); border-top-color: white;
+    border-radius: 50%; top: 50%; left: 50%;
     transform: translate(-50%,-50%);
     animation: spin 0.7s linear infinite;
   }
   @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-
-  /* ── SUCCESS SCREEN ── */
   #success-screen {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100svh;
-    padding: 40px 24px;
-    text-align: center;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100svh; padding: 40px 24px; text-align: center;
     animation: fadeIn 0.4s ease;
   }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
   .success-circle {
-    width: 88px; height: 88px;
-    background: var(--teal-lt);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2.8rem;
-    margin-bottom: 24px;
-    animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    width: 88px; height: 88px; background: var(--teal-lt); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 2.8rem;
+    margin-bottom: 24px; animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
-  .success-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--teal);
-    margin-bottom: 10px;
-  }
-  .success-sub {
-    font-size: 0.9rem;
-    color: var(--muted);
-    line-height: 1.6;
-    max-width: 260px;
-  }
-  .success-room {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background: var(--teal-lt);
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--teal);
-  }
-
-  /* ── ERROR MSG ── */
-  .error-msg {
-    display: none;
-    background: var(--red-lt);
-    color: var(--red);
-    border-radius: 10px;
-    padding: 12px 16px;
-    font-size: 0.82rem;
-    margin: 0 16px 16px;
-  }
+  .success-title { font-size: 1.4rem; font-weight: 700; color: var(--teal); margin-bottom: 10px; }
+  .success-sub   { font-size: 0.9rem; color: var(--muted); line-height: 1.6; max-width: 260px; }
+  .success-room  { margin-top: 20px; padding: 10px 20px; background: var(--teal-lt); border-radius: 999px; font-size: 0.85rem; font-weight: 500; color: var(--teal); }
+  .error-msg { display: none; background: var(--red-lt); color: var(--red); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; margin: 0 16px 16px; }
 </style>
 </head>
 <body>
 
-<!-- ════ 表單頁面 ════ -->
 <div id="form-screen">
-
   <div class="header">
     <div class="header-label">意見回饋</div>
     <div class="header-room" id="room-name">載入中…</div>
     <div class="header-sub">感謝您協助我們改善環境品質</div>
   </div>
-
-  <!-- 類型選擇 -->
   <div class="card">
     <div class="card-title">回饋類型</div>
     <div class="type-grid">
       <button class="type-btn" data-type="清潔" data-cls="selected-clean" onclick="selectType(this)">
-        <span class="icon">🧹</span>
-        <span class="label">清潔問題</span>
-        <span class="desc">髒污、異味<br>垃圾未清</span>
+        <span class="icon">🧹</span><span class="label">清潔問題</span><span class="desc">髒污、異味<br>垃圾未清</span>
       </button>
       <button class="type-btn" data-type="維修" data-cls="selected-repair" onclick="selectType(this)">
-        <span class="icon">🔧</span>
-        <span class="label">維修需求</span>
-        <span class="desc">設備損壞<br>燈光、門窗</span>
+        <span class="icon">🔧</span><span class="label">維修需求</span><span class="desc">設備損壞<br>燈光、門窗</span>
       </button>
       <button class="type-btn" data-type="其他意見" data-cls="selected-complaint" onclick="selectType(this)">
-        <span class="icon">💬</span>
-        <span class="label">其他意見</span>
-        <span class="desc">服務建議<br>環境改善</span>
+        <span class="icon">💬</span><span class="label">其他意見</span><span class="desc">服務建議<br>環境改善</span>
       </button>
       <button class="type-btn" data-type="緊急通報" data-cls="selected-other" onclick="selectType(this)">
-        <span class="icon">🚨</span>
-        <span class="label">緊急通報</span>
-        <span class="desc">安全疑慮<br>需立即處理</span>
+        <span class="icon">🚨</span><span class="label">緊急通報</span><span class="desc">安全疑慮<br>需立即處理</span>
       </button>
     </div>
   </div>
-
-  <!-- 緊急程度 -->
   <div class="card">
     <div class="card-title">緊急程度</div>
     <div class="urgency-row">
@@ -338,24 +171,17 @@
       <button class="urgency-btn" data-urgency="非常緊急" onclick="selectUrgency(this)">非常緊急</button>
     </div>
   </div>
-
-  <!-- 說明文字 -->
   <div class="card">
     <div class="card-title">說明（選填）</div>
     <textarea id="message" placeholder="請描述問題狀況，例如：3號床旁邊的燈壞了" maxlength="300" oninput="updateCount()"></textarea>
     <div class="char-count"><span id="char-count">0</span> / 300</div>
   </div>
-
-  <div class="error-msg" id="error-msg">送出失敗，請稍後再試。</div>
-
+  <div class="error-msg" id="error-msg"></div>
   <div class="submit-wrap">
     <button class="submit-btn" id="submit-btn" onclick="submitForm()">送出回饋</button>
   </div>
+</div>
 
-</div><!-- end form-screen -->
-
-
-<!-- ════ 成功頁面 ════ -->
 <div id="success-screen">
   <div class="success-circle">✓</div>
   <div class="success-title">謝謝您的回饋！</div>
@@ -363,97 +189,63 @@
   <div class="success-room" id="success-room-label"></div>
 </div>
 
-
 <script>
-// ══════════════════════════════════════════════
-//  ★ 只需要改這一行，換成你的 Apps Script URL
-// ══════════════════════════════════════════════
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzw3IkWiQ9OoQJQh6lo75LoTC-HjQVMHK3VsoHI5w8jLUWDWL4LIT-7OQ_pOCnJjOI3/exec";
+// ★ 換成你的 Apps Script URL
+const SCRIPT_URL = "https://script.google.com/macros/s/這裡換成你的URL/exec";
 
-// 房間對照表（和 Apps Script 裡的 ROOM_MAP 保持一致）
-const ROOM_MAP = {
-  "ward-301":    "病房 301",
-  "ward-302":    "病房 302",
-  "ward-303":    "病房 303",
-  "clinic-a":    "診間 A",
-  "clinic-b":    "診間 B",
-  "toilet-1f":   "廁所 1F",
-  "toilet-2f":   "廁所 2F",
-  "waiting-a":   "待診區 A",
-  "exam-room-1": "檢查室 1",
-  "exam-room-2": "檢查室 2",
-};
+// 從 rooms.js 建立對照表
+const ROOM_MAP = {};
+ROOMS.forEach(r => { ROOM_MAP[r.code] = r.name; });
 
-// ── 初始化：從 URL 讀取房間 ──
 const params   = new URLSearchParams(window.location.search);
 const roomCode = params.get("room") || "unknown";
 const roomName = ROOM_MAP[roomCode] || "未知區域（" + roomCode + "）";
 document.getElementById("room-name").textContent = roomName;
 document.getElementById("success-room-label").textContent = roomName;
 
-// ── 狀態 ──
 let selectedType    = "";
 let selectedUrgency = "一般";
-
-// 預設選第一個緊急程度
 document.querySelector('.urgency-btn').classList.add('sel-normal');
 
 function selectType(btn) {
-  document.querySelectorAll('.type-btn').forEach(b => {
-    b.className = 'type-btn';
-  });
+  document.querySelectorAll('.type-btn').forEach(b => b.className = 'type-btn');
   btn.classList.add(btn.dataset.cls);
   selectedType = btn.dataset.type;
 }
-
 function selectUrgency(btn) {
-  document.querySelectorAll('.urgency-btn').forEach(b => {
-    b.className = 'urgency-btn';
-  });
+  document.querySelectorAll('.urgency-btn').forEach(b => b.className = 'urgency-btn');
   selectedUrgency = btn.dataset.urgency;
   if (selectedUrgency === "一般")       btn.classList.add('sel-normal');
   if (selectedUrgency === "盡快處理")   btn.classList.add('sel-urgent');
   if (selectedUrgency === "非常緊急")   btn.classList.add('sel-critical');
 }
-
 function updateCount() {
-  const len = document.getElementById("message").value.length;
-  document.getElementById("char-count").textContent = len;
+  document.getElementById("char-count").textContent = document.getElementById("message").value.length;
 }
-
-// ── 送出 ──
 function submitForm() {
-  const msg     = document.getElementById("message").value.trim();
-  const errEl   = document.getElementById("error-msg");
-  const submitBtn = document.getElementById("submit-btn");
+  const errEl = document.getElementById("error-msg");
   errEl.style.display = "none";
-
   if (!selectedType) {
     errEl.textContent = "請先選擇回饋類型";
     errEl.style.display = "block";
     return;
   }
-
-  // 組合類型字串（含緊急程度）
   const typeStr = selectedType + (selectedUrgency !== "一般" ? "（" + selectedUrgency + "）" : "");
-
+  const submitBtn = document.getElementById("submit-btn");
   submitBtn.classList.add("loading");
   submitBtn.disabled = true;
-
-  // 送到 Apps Script
   const formData = new FormData();
   formData.append("room",    roomCode);
   formData.append("type",    typeStr);
-  formData.append("message", msg || "(未填寫)");
-
+  formData.append("message", document.getElementById("message").value.trim() || "(未填寫)");
   fetch(SCRIPT_URL, { method: "POST", body: formData })
     .then(r => r.json())
     .then(data => {
       if (data.status === "ok") {
-        showSuccess();
-      } else {
-        throw new Error(data.message);
-      }
+        document.getElementById("form-screen").style.display = "none";
+        const s = document.getElementById("success-screen");
+        s.style.display = "flex";
+      } else { throw new Error(); }
     })
     .catch(() => {
       submitBtn.classList.remove("loading");
@@ -461,12 +253,6 @@ function submitForm() {
       errEl.textContent = "送出失敗，請稍後再試。";
       errEl.style.display = "block";
     });
-}
-
-function showSuccess() {
-  document.getElementById("form-screen").style.display = "none";
-  const s = document.getElementById("success-screen");
-  s.style.display = "flex";
 }
 </script>
 </body>
