@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code 產生器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="rooms.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --blue:#1a6fa8;--blue-lt:#e8f3fb;--teal:#0e8f72;--teal-lt:#e4f6f1;
+    --border:#dde4ed;--bg:#f4f7fb;--white:#ffffff;--text:#1a2332;--muted:#7a8799;--radius:12px;
+  }
+  * { box-sizing:border-box;margin:0;padding:0; }
+  body { font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);padding:32px 16px 60px; }
+  h1 { font-size:1.3rem;font-weight:700;color:var(--blue);margin-bottom:4px; }
+  .subtitle { font-size:0.85rem;color:var(--muted);margin-bottom:28px; }
+  .config-card { background:var(--white);border-radius:var(--radius);box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:20px;margin-bottom:20px; }
+  .config-card label { display:block;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px; }
+  .config-card input[type="text"] { width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.9rem;color:var(--text);background:var(--bg);transition:border-color 0.2s; }
+  .config-card input:focus { outline:none;border-color:var(--blue);background:var(--white); }
+  .room-list { display:flex;flex-direction:column;gap:8px;margin-bottom:12px; }
+  .room-row { display:grid;grid-template-columns:1fr 1fr 36px;gap:8px;align-items:center; }
+  .room-row input { padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.85rem;color:var(--text);background:var(--bg); }
+  .room-row input:focus { outline:none;border-color:var(--blue);background:var(--white); }
+  .room-row input::placeholder { color:var(--muted); }
+  .del-btn { width:36px;height:36px;border:2px solid var(--border);border-radius:8px;background:none;cursor:pointer;font-size:1rem;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all 0.15s; }
+  .del-btn:hover { border-color:#e57373;color:#e57373;background:#fdeaea; }
+  .col-labels { display:grid;grid-template-columns:1fr 1fr 36px;gap:8px;margin-bottom:6px; }
+  .col-labels span { font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding-left:4px; }
+  .add-btn { width:100%;padding:10px;border:2px dashed var(--border);border-radius:8px;background:none;font-family:inherit;font-size:0.85rem;color:var(--muted);cursor:pointer;transition:all 0.15s; }
+  .add-btn:hover { border-color:var(--blue);color:var(--blue);background:var(--blue-lt); }
+  .hint { background:var(--blue-lt);border-radius:10px;padding:12px 16px;font-size:0.82rem;color:var(--blue);margin-bottom:20px;line-height:1.6; }
+  .generate-btn { width:100%;padding:16px;background:var(--blue);color:white;border:none;border-radius:var(--radius);font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:28px;transition:opacity 0.2s;letter-spacing:0.04em; }
+  .generate-btn:hover { opacity:0.9; }
+  #output { display:none; }
+  .output-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px; }
+  .output-title { font-size:1rem;font-weight:700; }
+  .print-btn { padding:8px 18px;background:var(--teal);color:white;border:none;border-radius:8px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer; }
+  .qr-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px; }
+  .qr-card { background:var(--white);border-radius:var(--radius);box-shadow:0 2px 10px rgba(0,0,0,0.07);padding:20px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px; }
+  .qr-room-name { font-size:0.95rem;font-weight:700;text-align:center;color:var(--text); }
+  .qr-code-label { font-size:0.7rem;color:var(--muted);text-align:center;word-break:break-all; }
+  .dl-btn { width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;background:none;font-family:inherit;font-size:0.78rem;font-weight:500;color:var(--blue);cursor:pointer;transition:all 0.15s; }
+  .dl-btn:hover { background:var(--blue-lt);border-color:var(--blue); }
+  @media print {
+    body { background:white;padding:0; }
+    .config-card,.generate-btn,.print-btn,.dl-btn,h1,.subtitle,.hint { display:none !important; }
+    #output { display:block !important; }
+    .output-header { display:none; }
+    .qr-grid { grid-template-columns:repeat(3,1fr);gap:24px;padding:24px; }
+    .qr-card { box-shadow:none;border:1px solid #dde4ed;break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🏥 QR Code 產生器</h1>
+<p class="subtitle">房間清單從 rooms.js 自動載入，改 rooms.js 就全部更新</p>
+
+<div class="hint">
+  💡 要新增或修改房間？只需編輯 <strong>rooms.js</strong> 這個檔案，上傳到 GitHub 後，<br>
+  表單（index.html）和這個產生器都會自動更新，不需要改其他地方。
+</div>
+
+<div class="config-card">
+  <label>表單網址</label>
+  <input type="text" id="base-url"
+    value="https://chiaoro.github.io/feedback-form/"
+    placeholder="https://你的帳號.github.io/專案名稱/">
+</div>
+
+<div class="config-card">
+  <div class="col-labels">
+    <span>房間代碼</span><span>顯示名稱</span><span></span>
+  </div>
+  <div class="room-list" id="room-list"></div>
+  <button class="add-btn" onclick="addRow()">＋ 臨時新增（不會存到 rooms.js）</button>
+</div>
+
+<button class="generate-btn" onclick="generate()">產生所有 QR Code</button>
+
+<div id="output">
+  <div class="output-header">
+    <div class="output-title">✅ 共 <span id="qr-count">0</span> 個</div>
+    <button class="print-btn" onclick="window.print()">🖨️ 列印全部</button>
+  </div>
+  <div class="qr-grid" id="qr-grid"></div>
+</div>
+
+<script>
+function initList() {
+  ROOMS.forEach(r => addRow(r.code, r.name));
+}
+function addRow(code = "", name = "") {
+  const list = document.getElementById("room-list");
+  const row = document.createElement("div");
+  row.className = "room-row";
+  row.innerHTML = `
+    <input type="text" class="room-code" placeholder="ward-301" value="${code}">
+    <input type="text" class="room-name" placeholder="病房 301" value="${name}">
+    <button class="del-btn" onclick="this.parentElement.remove()">✕</button>
+  `;
+  list.appendChild(row);
+}
+function generate() {
+  const baseUrl = document.getElementById("base-url").value.trim().replace(/\/?$/, "/");
+  const rows = document.querySelectorAll(".room-row");
+  const grid = document.getElementById("qr-grid");
+  grid.innerHTML = "";
+  let count = 0;
+  rows.forEach(row => {
+    const code = row.querySelector(".room-code").value.trim();
+    const name = row.querySelector(".room-name").value.trim();
+    if (!code || !name) return;
+    const url = baseUrl + "?room=" + encodeURIComponent(code);
+    const card = document.createElement("div");
+    card.className = "qr-card";
+    const qrDiv = document.createElement("div");
+    new QRCode(qrDiv, { text: url, width: 160, height: 160, colorDark: "#1a2332", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+    const nameEl = document.createElement("div");
+    nameEl.className = "qr-room-name";
+    nameEl.textContent = name;
+    const codeEl = document.createElement("div");
+    codeEl.className = "qr-code-label";
+    codeEl.textContent = url;
+    const dlBtn = document.createElement("button");
+    dlBtn.className = "dl-btn";
+    dlBtn.textContent = "⬇ 下載 " + name;
+    dlBtn.onclick = () => {
+      setTimeout(() => {
+        const canvas = qrDiv.querySelector("canvas");
+        if (!canvas) return;
+        const a = document.createElement("a");
+        a.download = "QR_" + code + ".png";
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+      }, 100);
+    };
+    card.appendChild(qrDiv);
+    card.appendChild(nameEl);
+    card.appendChild(codeEl);
+    card.appendChild(dlBtn);
+    grid.appendChild(card);
+    count++;
+  });
+  document.getElementById("qr-count").textContent = count;
+  document.getElementById("output").style.display = "block";
+  document.getElementById("output").scrollIntoView({ behavior: "smooth" });
+}
+initList();
+</script>
+</body>
+</html>
