@@ -6,6 +6,7 @@
 <title>醫院回饋後台</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
   --blue:#1a6fa8;--blue-lt:#e8f3fb;
@@ -44,11 +45,9 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text
 .role-tag{font-size:0.75rem;background:rgba(255,255,255,.18);padding:4px 12px;border-radius:999px}
 .logout-btn{font-size:0.78rem;background:none;border:1px solid rgba(255,255,255,.4);color:white;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit}
 .logout-btn:hover{background:rgba(255,255,255,.15)}
-
 .nav-tabs{background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 20px;overflow-x:auto}
 .tab-btn{padding:12px 16px;font-size:0.85rem;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap}
 .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
-
 .content{padding:20px;flex:1}
 
 /* ── STAT CARDS ── */
@@ -78,7 +77,6 @@ th{background:#f5f8fc;font-size:0.72rem;font-weight:700;color:var(--muted);paddi
 td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#fafcff}
-
 .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:0.7rem;font-weight:700}
 .b-wait{background:var(--red-lt);color:var(--red)}
 .b-doing{background:var(--amber-lt);color:var(--amber)}
@@ -88,37 +86,53 @@ tr:hover td{background:#fafcff}
 .b-nurse{background:var(--purple-lt);color:var(--purple)}
 .b-urg{background:var(--red-lt);color:var(--red)}
 .b-other{background:#f0f2f5;color:var(--gray)}
-
 .status-sel{padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-family:inherit;font-size:0.75rem;cursor:pointer;transition:all .15s}
 .status-sel:focus{outline:none;border-color:var(--blue)}
 .ss-wait{border-color:var(--red);color:var(--red);background:var(--red-lt)}
 .ss-doing{border-color:var(--amber);color:var(--amber);background:var(--amber-lt)}
 .ss-done{border-color:var(--green);color:var(--green);background:var(--green-lt)}
-
 .act-btn{padding:4px 10px;border-radius:6px;font-size:0.72rem;font-weight:700;border:1.5px solid;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;margin-right:3px}
 .btn-accept{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}.btn-accept:hover{background:var(--blue);color:white}
 .btn-done{border-color:var(--green);color:var(--green);background:var(--green-lt)}.btn-done:hover{background:var(--green);color:white}
-
 .empty-td{text-align:center;color:var(--muted);padding:32px!important;font-size:0.85rem}
 
-/* ── ROOMS ── */
+/* ── ROOMS + QR ── */
+.rooms-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:800px){.rooms-layout{grid-template-columns:1fr}}
 .panel{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .panel-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .panel-title{font-size:0.9rem;font-weight:700}
 .panel-bd{padding:16px 18px}
 .col-lbl{display:grid;grid-template-columns:1fr 1fr 36px;gap:8px;margin-bottom:8px}
 .col-lbl span{font-size:0.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-left:4px}
-.room-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.room-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:400px;overflow-y:auto}
 .room-row{display:grid;grid-template-columns:1fr 1fr 36px;gap:8px;align-items:center}
 .room-row input{padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.83rem;color:var(--text);background:var(--bg);width:100%;transition:border-color .15s}
 .room-row input:focus{outline:none;border-color:var(--blue);background:var(--white)}
 .room-row input::placeholder{color:var(--muted)}
-.del-btn{width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.del-btn{width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .del-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
-.add-room-btn{width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:8px;background:none;font-family:inherit;font-size:0.83rem;color:var(--muted);cursor:pointer;transition:all .15s}
+.add-room-btn{width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:8px;background:none;font-family:inherit;font-size:0.83rem;color:var(--muted);cursor:pointer;transition:all .15s;margin-bottom:12px}
 .add-room-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
-.save-btn{padding:10px 24px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-top:14px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.save-btn{padding:10px 20px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;transition:opacity .15s}
 .save-btn:hover{opacity:.9}
+.gen-qr-btn{padding:10px 20px;background:var(--teal);color:white;border:none;border-radius:8px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;transition:opacity .15s}
+.gen-qr-btn:hover{opacity:.9}
+
+/* ── QR PANEL ── */
+.url-row{display:flex;gap:8px;margin-bottom:14px}
+.url-row input{flex:1;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.8rem;color:var(--text);background:var(--bg)}
+.url-row input:focus{outline:none;border-color:var(--blue);background:var(--white)}
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-height:500px;overflow-y:auto}
+.qr-card{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--white)}
+.qr-name{font-size:0.78rem;font-weight:700;text-align:center;color:var(--text)}
+.qr-dl{width:100%;padding:5px;border:1px solid var(--border);border-radius:6px;background:none;font-family:inherit;font-size:0.7rem;font-weight:500;color:var(--blue);cursor:pointer;transition:all .15s;text-align:center}
+.qr-dl:hover{background:var(--blue-lt);border-color:var(--blue)}
+.qr-empty{text-align:center;color:var(--muted);font-size:0.83rem;padding:32px 16px}
+.print-bar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.print-btn{padding:6px 14px;border-radius:8px;font-size:0.78rem;font-weight:700;border:1.5px solid var(--teal);color:var(--teal);background:none;cursor:pointer;font-family:inherit}
+.print-btn:hover{background:var(--teal-lt)}
 
 /* ── STATS ── */
 .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px}
@@ -160,6 +174,13 @@ tr:hover td{background:#fafcff}
 .toast.ok-t{background:var(--green)}
 .toast.err-t{background:var(--red)}
 .warn-box{background:#fef4e0;border-radius:8px;padding:10px 14px;font-size:0.8rem;color:#854f0b;line-height:1.6}
+
+@media print{
+  .topbar,.nav-tabs,.panel:first-child,.url-row,.btn-row,.add-room-btn,.print-bar,.qr-dl{display:none!important}
+  .rooms-layout{grid-template-columns:1fr}
+  .qr-grid{grid-template-columns:repeat(4,1fr);max-height:none}
+  .qr-card{border:1px solid #ccc;break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -188,9 +209,9 @@ tr:hover td{background:#fafcff}
   </div>
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchTab('records',this)">回饋管理</button>
-    <button class="tab-btn" id="btn-stats" onclick="switchTab('stats',this)" style="display:none">統計報表</button>
-    <button class="tab-btn" id="btn-rooms" onclick="switchTab('rooms',this)" style="display:none">房間管理</button>
-    <button class="tab-btn" id="btn-admin" onclick="switchTab('admin',this)" style="display:none">帳號管理</button>
+    <button class="tab-btn" id="btn-stats" onclick="switchTab('stats',this)"  style="display:none">統計報表</button>
+    <button class="tab-btn" id="btn-rooms" onclick="switchTab('rooms',this)"  style="display:none">房間管理</button>
+    <button class="tab-btn" id="btn-admin" onclick="switchTab('admin',this)"  style="display:none">帳號管理</button>
   </div>
 
   <!-- 回饋管理 -->
@@ -203,14 +224,14 @@ tr:hover td{background:#fafcff}
     </div>
     <div class="filter-bar">
       <button class="chip on" data-sf="all"   onclick="setSF('all',this)">全部</button>
-      <button class="chip" data-sf="待處理"   onclick="setSF('待處理',this)">待處理</button>
-      <button class="chip" data-sf="處理中"   onclick="setSF('處理中',this)">處理中</button>
-      <button class="chip" data-sf="已完成"   onclick="setSF('已完成',this)">已完成</button>
+      <button class="chip" data-sf="待處理"    onclick="setSF('待處理',this)">待處理</button>
+      <button class="chip" data-sf="處理中"    onclick="setSF('處理中',this)">處理中</button>
+      <button class="chip" data-sf="已完成"    onclick="setSF('已完成',this)">已完成</button>
       <div class="sep"></div>
-      <button class="chip" data-tf="清潔"    onclick="setTF('清潔',this)">清潔</button>
-      <button class="chip" data-tf="維修"    onclick="setTF('維修',this)">維修</button>
-      <button class="chip" data-tf="緊急"    onclick="setTF('緊急',this)">緊急</button>
-      <button class="chip" data-tf="其他"    onclick="setTF('其他',this)">其他</button>
+      <button class="chip" data-tf="清潔"     onclick="setTF('清潔',this)">清潔</button>
+      <button class="chip" data-tf="維修"     onclick="setTF('維修',this)">維修</button>
+      <button class="chip" data-tf="緊急"     onclick="setTF('緊急',this)">緊急</button>
+      <button class="chip" data-tf="其他"     onclick="setTF('其他',this)">其他</button>
       <div class="spacer"></div>
       <button class="refresh-btn" onclick="loadRecords()">↻ 重新整理</button>
     </div>
@@ -249,19 +270,45 @@ tr:hover td{background:#fafcff}
     </div>
   </div>
 
-  <!-- 房間管理 -->
+  <!-- 房間管理 + QR Code -->
   <div class="content" id="tab-rooms" style="display:none">
-    <div class="panel">
-      <div class="panel-hd">
-        <div class="panel-title">房間清單</div>
-        <span id="room-count-lbl" style="font-size:0.78rem;color:var(--muted)"></span>
+    <div class="rooms-layout">
+
+      <!-- 左：房間清單 -->
+      <div class="panel">
+        <div class="panel-hd">
+          <div class="panel-title">房間清單</div>
+          <span id="room-count-lbl" style="font-size:0.78rem;color:var(--muted)"></span>
+        </div>
+        <div class="panel-bd">
+          <div class="col-lbl"><span>房間代碼（英文）</span><span>顯示名稱</span><span></span></div>
+          <div class="room-list" id="room-list">
+            <div class="loading"><div class="spinner"></div>載入中…</div>
+          </div>
+          <button class="add-room-btn" onclick="addRoomRow()">＋ 新增房間</button>
+          <div class="btn-row">
+            <button class="save-btn" onclick="saveRooms()">💾 儲存</button>
+            <button class="gen-qr-btn" onclick="generateQR()">🔲 產生 QR Code</button>
+          </div>
+        </div>
       </div>
-      <div class="panel-bd">
-        <div class="col-lbl"><span>房間代碼（英文）</span><span>顯示名稱</span><span></span></div>
-        <div class="room-list" id="room-list"><div class="loading"><div class="spinner"></div>載入中…</div></div>
-        <button class="add-room-btn" onclick="addRoomRow()">＋ 新增房間</button>
-        <div><button class="save-btn" onclick="saveRooms()">💾 儲存房間清單</button></div>
+
+      <!-- 右：QR Code -->
+      <div class="panel">
+        <div class="panel-hd">
+          <div class="panel-title">QR Code</div>
+          <button class="print-btn" onclick="window.print()">🖨 列印全部</button>
+        </div>
+        <div class="panel-bd">
+          <div class="url-row">
+            <input type="text" id="base-url" value="https://chiaoro.github.io/feedback-form/" placeholder="表單網址">
+          </div>
+          <div class="qr-grid" id="qr-grid">
+            <div class="qr-empty">設定好房間後<br>按「產生 QR Code」</div>
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
 
@@ -291,7 +338,7 @@ tr:hover td{background:#fafcff}
     </div>
     <div class="admin-card">
       <div class="warn-box">⚠️ 預設密碼請盡快修改！<br>
-        admin / admin123 &nbsp;·&nbsp; clean / clean123 &nbsp;·&nbsp; repair / repair123 &nbsp;·&nbsp; nursing / nurse123
+        admin / admin123 · clean / clean123 · repair / repair123 · nursing / nurse123
       </div>
     </div>
   </div>
@@ -301,7 +348,7 @@ tr:hover td{background:#fafcff}
 
 <script>
 // ★ 換成你的 Apps Script URL
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzw3IkWiQ9OoQJQh6lo75LoTC-HjQVMHK3VsoHI5w8jLUWDWL4LIT-7OQ_pOCnJjOI3/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/這裡換成你的URL/exec";
 
 let currentRole = "";
 let currentUser = "";
@@ -319,7 +366,6 @@ function doLogin() {
   if (!user||!pass) { showLoginErr("請輸入帳號和密碼"); return; }
   btn.disabled = true; btn.textContent = "登入中…";
   errEl.style.display = "none";
-
   post({ action:"login", username:user, password:pass })
     .then(d => {
       currentRole = d.role;
@@ -335,16 +381,12 @@ function doLogin() {
       btn.textContent = "登入";
     });
 }
-function showLoginErr(m) {
-  const e = document.getElementById("login-err");
-  e.textContent = m; e.style.display = "block";
-}
+function showLoginErr(m) { const e=document.getElementById("login-err"); e.textContent=m; e.style.display="block"; }
 
 function enterMain(role, label) {
   document.getElementById("login-page").style.display = "none";
   document.getElementById("main-page").style.display  = "flex";
   document.getElementById("role-badge").textContent = label;
-  // admin 才看得到統計、房間、帳號管理
   if (role === "admin") {
     document.getElementById("btn-stats").style.display = "";
     document.getElementById("btn-rooms").style.display = "";
@@ -354,8 +396,7 @@ function enterMain(role, label) {
 }
 
 function logout() {
-  sessionStorage.clear();
-  currentRole = ""; currentUser = "";
+  sessionStorage.clear(); currentRole=""; currentUser="";
   document.getElementById("main-page").style.display  = "none";
   document.getElementById("login-page").style.display = "flex";
   document.getElementById("username").value = "";
@@ -386,10 +427,10 @@ function loadRecords() {
 }
 
 function renderRecords() {
-  let w=0, doing=0, done=0;
+  let w=0,doing=0,done=0;
   allRecords.forEach(r => {
-    if (r.status==="待處理") w++;
-    else if (r.status==="處理中") doing++;
+    if(r.status==="待處理")w++;
+    else if(r.status==="處理中")doing++;
     else done++;
   });
   document.getElementById("cnt-wait").textContent  = w;
@@ -404,34 +445,19 @@ function renderRecords() {
   });
 
   const tbody = document.getElementById("records-body");
-  if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-td">沒有符合的記錄</td></tr>';
-    return;
-  }
+  if (!filtered.length) { tbody.innerHTML='<tr><td colspan="7" class="empty-td">沒有符合的記錄</td></tr>'; return; }
 
   tbody.innerHTML = filtered.map(r => {
-    const tc = r.type.indexOf("清潔")!==-1 ? "b-clean" :
-               r.type.indexOf("維修")!==-1 ? "b-fix" :
-               r.type.indexOf("緊急")!==-1 ? "b-urg" :
-               r.type.indexOf("其他")!==-1 ? "b-nurse" : "b-other";
-    const sc = r.status==="待處理" ? "ss-wait" : r.status==="處理中" ? "ss-doing" : "ss-done";
+    const tc = r.type.indexOf("清潔")!==-1?"b-clean":r.type.indexOf("維修")!==-1?"b-fix":r.type.indexOf("緊急")!==-1?"b-urg":r.type.indexOf("其他")!==-1?"b-nurse":"b-other";
+    const sc = r.status==="待處理"?"ss-wait":r.status==="處理中"?"ss-doing":"ss-done";
     let acts = "";
-    if (r.status==="待處理")
-      acts = `<button class="act-btn btn-accept" onclick="updStat(${r.row},'處理中',this)">接受處理</button>
-              <button class="act-btn btn-done"   onclick="updStat(${r.row},'已完成',this)">完成</button>`;
-    else if (r.status==="處理中")
-      acts = `<button class="act-btn btn-done" onclick="updStat(${r.row},'已完成',this)">標記完成</button>`;
-    else
-      acts = `<span style="font-size:0.72rem;color:var(--muted)">已結案</span>`;
-
-    // 時間格式化
+    if(r.status==="待處理")      acts=`<button class="act-btn btn-accept" onclick="updStat(${r.row},'處理中',this)">接受處理</button><button class="act-btn btn-done" onclick="updStat(${r.row},'已完成',this)">完成</button>`;
+    else if(r.status==="處理中") acts=`<button class="act-btn btn-done" onclick="updStat(${r.row},'已完成',this)">標記完成</button>`;
+    else                          acts=`<span style="font-size:0.72rem;color:var(--muted)">已結案</span>`;
     const t = new Date(r.time);
     const timeStr = isNaN(t) ? r.time :
-      (t.getMonth()+1).toString().padStart(2,"0") + "/" +
-       t.getDate().toString().padStart(2,"0") + " " +
-       t.getHours().toString().padStart(2,"0") + ":" +
-       t.getMinutes().toString().padStart(2,"0");
-
+      (t.getMonth()+1).toString().padStart(2,"0")+"/"+t.getDate().toString().padStart(2,"0")+" "+
+      t.getHours().toString().padStart(2,"0")+":"+t.getMinutes().toString().padStart(2,"0");
     return `<tr>
       <td style="color:var(--muted);white-space:nowrap;font-size:0.78rem">${timeStr}</td>
       <td style="white-space:nowrap">${r.roomName||r.roomCode}</td>
@@ -448,67 +474,56 @@ function renderRecords() {
   }).join("");
 }
 
-function setSF(val, btn) {
-  sf = val;
-  document.querySelectorAll("[data-sf]").forEach(b => b.className="chip");
-  const cls = val==="all"?"on":val==="待處理"?"on-red":val==="處理中"?"on-amber":"on-green";
-  btn.classList.add(cls);
+function setSF(val,btn){
+  sf=val;
+  document.querySelectorAll("[data-sf]").forEach(b=>b.className="chip");
+  btn.classList.add(val==="all"?"on":val==="待處理"?"on-red":val==="處理中"?"on-amber":"on-green");
   renderRecords();
 }
-function setTF(val, btn) {
-  tf = (tf===val ? "" : val);
-  document.querySelectorAll("[data-tf]").forEach(b => b.className="chip");
-  if (tf) btn.classList.add("on");
+function setTF(val,btn){
+  tf=(tf===val?"":val);
+  document.querySelectorAll("[data-tf]").forEach(b=>b.className="chip");
+  if(tf) btn.classList.add("on");
   renderRecords();
 }
-
-function updStat(row, status, el) {
-  if (el) el.disabled = true;
-  post({ action:"updateStatus", row:row, status:status, role:currentRole })
-    .then(() => { showToast("已更新為「"+status+"」","ok"); loadRecords(); })
-    .catch(e => { showToast(e.message||"更新失敗","err"); if(el) el.disabled=false; });
+function updStat(row,status,el){
+  if(el) el.disabled=true;
+  post({action:"updateStatus",row:row,status:status,role:currentRole})
+    .then(()=>{showToast("已更新為「"+status+"」","ok");loadRecords();})
+    .catch(e=>{showToast(e.message||"更新失敗","err");if(el)el.disabled=false;});
 }
 
 // ── STATS ─────────────────────────────────────────────────────
-function loadStats() {
-  get({ action:"getStats", role:currentRole })
-    .then(d => renderStats(d.stats))
-    .catch(() => showToast("統計載入失敗","err"));
+function loadStats(){
+  get({action:"getStats",role:currentRole})
+    .then(d=>renderStats(d.stats))
+    .catch(()=>showToast("統計載入失敗","err"));
 }
-
-function renderStats(s) {
-  const total   = Object.values(s.byStatus).reduce((a,b)=>a+b, 0);
-  const done    = s.byStatus["已完成"] || 0;
-  const pending = (s.byStatus["待處理"]||0) + (s.byStatus["處理中"]||0);
-  document.getElementById("s-total").textContent   = total;
-  document.getElementById("s-rate").textContent    = total ? Math.round(done/total*100)+"%" : "—";
-  document.getElementById("s-pending").textContent = pending;
-
-  // 每日長條圖
-  const dLabels = s.daily.map(d => d.day);
-  const dData   = s.daily.map(d => d.count);
-  if (dailyChart) dailyChart.destroy();
-  dailyChart = new Chart(document.getElementById("chart-daily"), {
-    type:"bar",
-    data:{ labels:dLabels, datasets:[{ label:"回饋數", data:dData, backgroundColor:"rgba(26,111,168,.75)", borderRadius:4 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}} }
+function renderStats(s){
+  const total=Object.values(s.byStatus).reduce((a,b)=>a+b,0);
+  const done=s.byStatus["已完成"]||0;
+  const pending=(s.byStatus["待處理"]||0)+(s.byStatus["處理中"]||0);
+  document.getElementById("s-total").textContent=total;
+  document.getElementById("s-rate").textContent=total?Math.round(done/total*100)+"%":"—";
+  document.getElementById("s-pending").textContent=pending;
+  const dLabels=s.daily.map(d=>d.day);
+  const dData=s.daily.map(d=>d.count);
+  if(dailyChart)dailyChart.destroy();
+  dailyChart=new Chart(document.getElementById("chart-daily"),{
+    type:"bar",data:{labels:dLabels,datasets:[{label:"回饋數",data:dData,backgroundColor:"rgba(26,111,168,.75)",borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}
   });
-
-  // 類型圓餅圖
-  const tKeys = Object.keys(s.byType);
-  const tVals = tKeys.map(k => s.byType[k]);
-  const colors = ["#1a6fa8","#0e8f72","#c47d0e","#b83030","#5b3ea8","#5a6575"];
-  if (typeChart) typeChart.destroy();
-  typeChart = new Chart(document.getElementById("chart-type"), {
-    type:"doughnut",
-    data:{ labels:tKeys, datasets:[{ data:tVals, backgroundColor:colors, borderWidth:2, borderColor:"#fff" }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:"right", labels:{ font:{size:11}, boxWidth:12 } } } }
+  const tKeys=Object.keys(s.byType);
+  const tVals=tKeys.map(k=>s.byType[k]);
+  const colors=["#1a6fa8","#0e8f72","#c47d0e","#b83030","#5b3ea8","#5a6575"];
+  if(typeChart)typeChart.destroy();
+  typeChart=new Chart(document.getElementById("chart-type"),{
+    type:"doughnut",data:{labels:tKeys,datasets:[{data:tVals,backgroundColor:colors,borderWidth:2,borderColor:"#fff"}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{font:{size:11},boxWidth:12}}}}
   });
-
-  // Top 5 地點
-  const sorted = Object.entries(s.byRoom).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const max = sorted[0] ? sorted[0][1] : 1;
-  document.getElementById("top-rooms").innerHTML = sorted.map(([room,cnt]) => `
+  const sorted=Object.entries(s.byRoom).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const max=sorted[0]?sorted[0][1]:1;
+  document.getElementById("top-rooms").innerHTML=sorted.map(([room,cnt])=>`
     <div class="top-item">
       <div class="top-name">${room}</div>
       <div class="top-bar-wrap"><div class="top-bar" style="width:${Math.round(cnt/max*100)}%"></div></div>
@@ -517,88 +532,135 @@ function renderStats(s) {
 }
 
 // ── ROOMS ─────────────────────────────────────────────────────
-function loadRooms() {
-  document.getElementById("room-list").innerHTML = '<div class="loading"><div class="spinner"></div>載入中…</div>';
-  get({ action:"getRooms" })
-    .then(d => {
-      const l = document.getElementById("room-list");
-      l.innerHTML = "";
-      d.rooms.forEach(r => addRoomRow(r.code, r.name));
+function loadRooms(){
+  document.getElementById("room-list").innerHTML='<div class="loading"><div class="spinner"></div>載入中…</div>';
+  get({action:"getRooms"})
+    .then(d=>{
+      const l=document.getElementById("room-list");
+      l.innerHTML="";
+      d.rooms.forEach(r=>addRoomRow(r.code,r.name));
       updateRoomCount();
     })
-    .catch(() => showToast("房間載入失敗","err"));
+    .catch(()=>showToast("房間載入失敗","err"));
 }
-function addRoomRow(code="", name="") {
-  const l = document.getElementById("room-list");
-  const r = document.createElement("div");
-  r.className = "room-row";
-  r.innerHTML = `<input type="text" class="room-code" placeholder="ward-301" value="${code}">
+function addRoomRow(code="",name=""){
+  const l=document.getElementById("room-list");
+  const r=document.createElement("div");
+  r.className="room-row";
+  r.innerHTML=`<input type="text" class="room-code" placeholder="ward-301" value="${code}">
     <input type="text" class="room-name" placeholder="病房 301" value="${name}">
     <button class="del-btn" onclick="this.closest('.room-row').remove();updateRoomCount()">✕</button>`;
   l.appendChild(r);
   updateRoomCount();
 }
-function updateRoomCount() {
-  document.getElementById("room-count-lbl").textContent = document.querySelectorAll(".room-row").length + " 個";
+function updateRoomCount(){
+  document.getElementById("room-count-lbl").textContent=document.querySelectorAll(".room-row").length+" 個";
 }
-function saveRooms() {
-  const rooms = [...document.querySelectorAll(".room-row")].map(r => ({
+function saveRooms(){
+  const rooms=[...document.querySelectorAll(".room-row")].map(r=>({
+    code:r.querySelector(".room-code").value.trim(),
+    name:r.querySelector(".room-name").value.trim()
+  })).filter(r=>r.code&&r.name);
+  if(!rooms.length){showToast("請至少填寫一個房間","err");return;}
+  post({action:"saveRooms",rooms:JSON.stringify(rooms)})
+    .then(()=>showToast("房間清單已儲存 ✓","ok"))
+    .catch(()=>showToast("儲存失敗","err"));
+}
+
+// ── QR CODE ───────────────────────────────────────────────────
+function generateQR(){
+  const baseUrl = document.getElementById("base-url").value.trim().replace(/\/?$/,"/");
+  const rows    = document.querySelectorAll(".room-row");
+  const grid    = document.getElementById("qr-grid");
+  grid.innerHTML = "";
+
+  const rooms = [...rows].map(r=>({
     code: r.querySelector(".room-code").value.trim(),
     name: r.querySelector(".room-name").value.trim()
-  })).filter(r => r.code && r.name);
-  if (!rooms.length) { showToast("請至少填寫一個房間","err"); return; }
-  post({ action:"saveRooms", rooms:JSON.stringify(rooms) })
-    .then(() => showToast("房間清單已儲存 ✓","ok"))
-    .catch(() => showToast("儲存失敗","err"));
+  })).filter(r=>r.code&&r.name);
+
+  if(!rooms.length){
+    grid.innerHTML='<div class="qr-empty">請先新增並儲存房間</div>';
+    return;
+  }
+
+  rooms.forEach(r => {
+    const url  = baseUrl + "?room=" + encodeURIComponent(r.code);
+    const card = document.createElement("div");
+    card.className = "qr-card";
+
+    const qrDiv = document.createElement("div");
+    new QRCode(qrDiv, {
+      text: url, width: 110, height: 110,
+      colorDark: "#1a2332", colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "qr-name";
+    nameEl.textContent = r.name;
+
+    const dlBtn = document.createElement("button");
+    dlBtn.className = "qr-dl";
+    dlBtn.textContent = "⬇ 下載";
+    dlBtn.onclick = () => {
+      setTimeout(() => {
+        const canvas = qrDiv.querySelector("canvas");
+        if (!canvas) return;
+        const a = document.createElement("a");
+        a.download = "QR_" + r.code + ".png";
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+      }, 100);
+    };
+
+    card.appendChild(qrDiv);
+    card.appendChild(nameEl);
+    card.appendChild(dlBtn);
+    grid.appendChild(card);
+  });
+
+  showToast("已產生 "+rooms.length+" 個 QR Code","ok");
 }
 
 // ── ADMIN ─────────────────────────────────────────────────────
-function changePassword() {
-  const ap = document.getElementById("admin-confirm-pw").value.trim();
-  const tu = document.getElementById("target-user").value.trim();
-  const np = document.getElementById("new-pw").value.trim();
-  if (!ap||!tu||!np) { showPwMsg("err","請填寫全部欄位"); return; }
-  post({ action:"changePassword", adminUser:currentUser, adminPass:ap, targetUser:tu, newPass:np })
-    .then(() => {
-      showPwMsg("ok","密碼已更新！");
-      document.getElementById("admin-confirm-pw").value = "";
-      document.getElementById("new-pw").value = "";
-    })
-    .catch(e => showPwMsg("err", e.message||"更新失敗"));
+function changePassword(){
+  const ap=document.getElementById("admin-confirm-pw").value.trim();
+  const tu=document.getElementById("target-user").value.trim();
+  const np=document.getElementById("new-pw").value.trim();
+  if(!ap||!tu||!np){showPwMsg("err","請填寫全部欄位");return;}
+  post({action:"changePassword",adminUser:currentUser,adminPass:ap,targetUser:tu,newPass:np})
+    .then(()=>{showPwMsg("ok","密碼已更新！");document.getElementById("admin-confirm-pw").value="";document.getElementById("new-pw").value="";})
+    .catch(e=>showPwMsg("err",e.message||"更新失敗"));
 }
-function showPwMsg(t, m) {
-  const e = document.getElementById("pw-msg");
-  e.className = "pw-msg "+t; e.textContent = m; e.style.display = "block";
-  setTimeout(() => e.style.display="none", 4000);
+function showPwMsg(t,m){
+  const e=document.getElementById("pw-msg");
+  e.className="pw-msg "+t;e.textContent=m;e.style.display="block";
+  setTimeout(()=>e.style.display="none",4000);
 }
 
 // ── UTILS ─────────────────────────────────────────────────────
-function get(params) {
-  const qs = Object.entries(params).map(([k,v]) => k+"="+encodeURIComponent(v)).join("&");
-  return fetch(SCRIPT_URL+"?"+qs)
-    .then(r => r.json())
-    .then(d => { if (d.status!=="ok") throw new Error(d.message); return d; });
+function get(params){
+  const qs=Object.entries(params).map(([k,v])=>k+"="+encodeURIComponent(v)).join("&");
+  return fetch(SCRIPT_URL+"?"+qs).then(r=>r.json()).then(d=>{if(d.status!=="ok")throw new Error(d.message);return d;});
 }
-function post(params) {
-  const fd = new FormData();
-  Object.entries(params).forEach(([k,v]) => fd.append(k, v));
-  return fetch(SCRIPT_URL, { method:"POST", body:fd })
-    .then(r => r.json())
-    .then(d => { if (d.status!=="ok") throw new Error(d.message); return d; });
+function post(params){
+  const fd=new FormData();
+  Object.entries(params).forEach(([k,v])=>fd.append(k,v));
+  return fetch(SCRIPT_URL,{method:"POST",body:fd}).then(r=>r.json()).then(d=>{if(d.status!=="ok")throw new Error(d.message);return d;});
 }
-function showToast(msg, type="ok") {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.className = "toast "+(type==="ok"?"ok-t":"err-t")+" show";
-  setTimeout(() => t.classList.remove("show"), 2500);
+function showToast(msg,type="ok"){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.className="toast "+(type==="ok"?"ok-t":"err-t")+" show";
+  setTimeout(()=>t.classList.remove("show"),2500);
 }
 
 // ── 自動恢復登入 ──────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded", () => {
-  const role  = sessionStorage.getItem("role");
-  const user  = sessionStorage.getItem("user");
-  const label = sessionStorage.getItem("label");
-  if (role && user) { currentRole=role; currentUser=user; enterMain(role, label); }
+window.addEventListener("DOMContentLoaded",()=>{
+  const role=sessionStorage.getItem("role");
+  const user=sessionStorage.getItem("user");
+  const label=sessionStorage.getItem("label");
+  if(role&&user){currentRole=role;currentUser=user;enterMain(role,label);}
 });
 </script>
 </body>
