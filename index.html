@@ -3,255 +3,499 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>意見回饋</title>
+<title>環境回報系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-<!-- ★ 從同一份 rooms.js 讀取房間清單 -->
 <script src="rooms.js"></script>
 <style>
-  :root {
-    --blue:    #1a6fa8;
-    --blue-lt: #e8f3fb;
-    --teal:    #0e8f72;
-    --teal-lt: #e4f6f1;
-    --amber:   #c47d0e;
-    --amber-lt:#fef4e0;
-    --red:     #b83030;
-    --red-lt:  #fdeaea;
-    --gray:    #5a6575;
-    --border:  #dde4ed;
-    --bg:      #f4f7fb;
-    --white:   #ffffff;
-    --text:    #1a2332;
-    --muted:   #7a8799;
-    --radius:  14px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: 'Noto Sans TC', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100svh;
-    display: flex;
-    flex-direction: column;
-  }
-  .header {
-    background: var(--blue);
-    color: white;
-    padding: 20px 20px 28px;
-    position: relative;
-    overflow: hidden;
-  }
-  .header::after {
-    content: '';
-    position: absolute;
-    bottom: -20px; left: 0; right: 0;
-    height: 40px;
-    background: var(--bg);
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-  }
-  .header-label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
-  .header-room  { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
-  .header-sub   { font-size: 0.82rem; opacity: 0.75; margin-top: 4px; }
-  .card {
-    background: var(--white);
-    border-radius: var(--radius);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    padding: 20px;
-    margin: 0 16px 16px;
-  }
-  .card:first-of-type { margin-top: -8px; }
-  .card-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
-  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .type-btn {
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    padding: 16px 8px;
-    border: 2px solid var(--border); border-radius: 12px;
-    background: none; cursor: pointer;
-    transition: all 0.18s ease;
-    font-family: inherit;
-  }
-  .type-btn .icon  { font-size: 1.8rem; line-height: 1; }
-  .type-btn .label { font-size: 0.85rem; font-weight: 500; color: var(--text); }
-  .type-btn .desc  { font-size: 0.7rem; color: var(--muted); text-align: center; line-height: 1.3; }
-  .type-btn.selected-clean     { border-color: var(--teal);  background: var(--teal-lt); }
-  .type-btn.selected-clean .label { color: var(--teal); }
-  .type-btn.selected-repair    { border-color: var(--blue);  background: var(--blue-lt); }
-  .type-btn.selected-repair .label { color: var(--blue); }
-  .type-btn.selected-complaint { border-color: var(--amber); background: var(--amber-lt); }
-  .type-btn.selected-complaint .label { color: var(--amber); }
-  .type-btn.selected-other     { border-color: var(--gray);  background: #f0f2f5; }
-  .type-btn.selected-other .label { color: var(--gray); }
-  .urgency-row { display: flex; gap: 8px; }
-  .urgency-btn {
-    flex: 1; padding: 10px 6px;
-    border: 2px solid var(--border); border-radius: 10px;
-    background: none; font-family: inherit; font-size: 0.8rem; font-weight: 500;
-    color: var(--muted); cursor: pointer; transition: all 0.15s ease; text-align: center;
-  }
-  .urgency-btn.sel-normal   { border-color: var(--teal);  background: var(--teal-lt);  color: var(--teal); }
-  .urgency-btn.sel-urgent   { border-color: var(--amber); background: var(--amber-lt); color: var(--amber); }
-  .urgency-btn.sel-critical { border-color: var(--red);   background: var(--red-lt);   color: var(--red); }
-  textarea {
-    width: 100%; min-height: 110px; padding: 14px;
-    border: 2px solid var(--border); border-radius: 10px;
-    font-family: inherit; font-size: 0.95rem; color: var(--text);
-    background: var(--bg); resize: none; transition: border-color 0.2s; line-height: 1.6;
-    -webkit-appearance: none;
-  }
-  textarea:focus { outline: none; border-color: var(--blue); background: var(--white); }
-  textarea::placeholder { color: var(--muted); }
-  .char-count { text-align: right; font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
-  .submit-wrap { padding: 0 16px 32px; }
-  .submit-btn {
-    width: 100%; padding: 18px;
-    background: var(--blue); color: white; border: none; border-radius: 14px;
-    font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer;
-    transition: all 0.2s ease; letter-spacing: 0.04em; position: relative; overflow: hidden;
-  }
-  .submit-btn:active { transform: scale(0.98); }
-  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .submit-btn.loading { color: transparent; }
-  .submit-btn.loading::after {
-    content: ''; position: absolute;
-    width: 22px; height: 22px;
-    border: 3px solid rgba(255,255,255,0.4); border-top-color: white;
-    border-radius: 50%; top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
-  #success-screen {
-    display: none; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100svh; padding: 40px 24px; text-align: center;
-    animation: fadeIn 0.4s ease;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-  .success-circle {
-    width: 88px; height: 88px; background: var(--teal-lt); border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; font-size: 2.8rem;
-    margin-bottom: 24px; animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
-  .success-title { font-size: 1.4rem; font-weight: 700; color: var(--teal); margin-bottom: 10px; }
-  .success-sub   { font-size: 0.9rem; color: var(--muted); line-height: 1.6; max-width: 260px; }
-  .success-room  { margin-top: 20px; padding: 10px 20px; background: var(--teal-lt); border-radius: 999px; font-size: 0.85rem; font-weight: 500; color: var(--teal); }
-  .error-msg { display: none; background: var(--red-lt); color: var(--red); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; margin: 0 16px 16px; }
+:root {
+  --blue:    #1a6fa8;
+  --blue-lt: #e8f3fb;
+  --teal:    #0e8f72;
+  --teal-lt: #e4f6f1;
+  --amber:   #c47d0e;
+  --amber-lt:#fef4e0;
+  --red:     #b83030;
+  --red-lt:  #fdeaea;
+  --purple:  #5b3ea8;
+  --purple-lt:#eeebfb;
+  --border:  #dde4ed;
+  --bg:      #f4f7fb;
+  --white:   #ffffff;
+  --text:    #1a2332;
+  --muted:   #7a8799;
+  --radius:  14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--blue);
+  color: white;
+  padding: 20px 20px 32px;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: rgba(255,255,255,.06);
+  border-radius: 50%;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -20px; left: 0; right: 0;
+  height: 40px;
+  background: var(--bg);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.header-label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
+.header-title { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; }
+.header-room  { font-size: 0.85rem; opacity: 0.82; margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+.room-chip { background: rgba(255,255,255,.2); padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 500; }
+
+/* ── CARD ── */
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 12px rgba(0,0,0,.07);
+  padding: 20px;
+  margin: 0 16px 14px;
+}
+.card:first-of-type { margin-top: -10px; position: relative; z-index: 1; }
+.card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.required-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.optional-tag {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ── 類型選擇 ── */
+.type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.type-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 8px;
+  border: 2px solid var(--border); border-radius: 12px;
+  background: none; cursor: pointer; transition: all 0.18s ease; font-family: inherit;
+}
+.type-btn .icon  { font-size: 1.7rem; line-height: 1; }
+.type-btn .label { font-size: 0.83rem; font-weight: 500; color: var(--text); }
+.type-btn .desc  { font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.3; }
+.type-btn.sel-clean  { border-color: var(--teal);   background: var(--teal-lt); }
+.type-btn.sel-clean .label  { color: var(--teal); }
+.type-btn.sel-repair { border-color: var(--blue);   background: var(--blue-lt); }
+.type-btn.sel-repair .label { color: var(--blue); }
+.type-btn.sel-safety { border-color: var(--red);    background: var(--red-lt); }
+.type-btn.sel-safety .label { color: var(--red); }
+.type-btn.sel-other  { border-color: var(--purple); background: var(--purple-lt); }
+.type-btn.sel-other .label  { color: var(--purple); }
+.other-wrap { display: none; margin-top: 12px; }
+.other-wrap.show { display: block; }
+.other-input {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-family: inherit; font-size: 0.88rem; color: var(--text);
+  background: var(--bg); transition: border-color .2s;
+}
+.other-input:focus { outline: none; border-color: var(--blue); background: var(--white); }
+.other-input::placeholder { color: var(--muted); }
+
+/* ── 問題描述 ── */
+textarea {
+  width: 100%; min-height: 110px; padding: 14px;
+  border: 2px solid var(--border); border-radius: 10px;
+  font-family: inherit; font-size: 0.92rem; color: var(--text);
+  background: var(--bg); resize: none; transition: border-color .2s; line-height: 1.6;
+  -webkit-appearance: none;
+}
+textarea:focus { outline: none; border-color: var(--blue); background: var(--white); }
+textarea::placeholder { color: var(--muted); }
+textarea.err { border-color: var(--red); }
+.char-count { text-align: right; font-size: 0.7rem; color: var(--muted); margin-top: 6px; }
+
+/* ── 上傳照片 ── */
+.photo-upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.photo-upload-area:hover { border-color: var(--blue); background: var(--blue-lt); }
+.photo-upload-area.has-photo { border-style: solid; border-color: var(--teal); background: var(--teal-lt); padding: 10px; }
+.upload-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.upload-text { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+.upload-hint { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+#photo-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* 預覽圖 */
+.photo-preview-wrap {
+  position: relative;
+  display: inline-block;
+}
+.photo-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+.photo-remove {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 28px; height: 28px;
+  background: rgba(0,0,0,.55);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.photo-remove:hover { background: var(--red); }
+.photo-name {
+  font-size: 0.75rem;
+  color: var(--teal);
+  margin-top: 6px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* 壓縮進度 */
+.compress-hint {
+  font-size: 0.72rem;
+  color: var(--amber);
+  margin-top: 6px;
+  text-align: center;
+  display: none;
+}
+
+/* ── 聯繫電話 ── */
+.phone-input {
+  width: 100%; padding: 12px 14px;
+  border: 2px solid var(--border); border-radius: 10px;
+  font-family: inherit; font-size: 0.92rem; color: var(--text);
+  background: var(--bg); transition: border-color .2s; -webkit-appearance: none;
+}
+.phone-input:focus { outline: none; border-color: var(--blue); background: var(--white); }
+.phone-input::placeholder { color: var(--muted); }
+.field-hint { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+
+/* ── 錯誤提示 ── */
+.err-msg { background: var(--red-lt); color: var(--red); border-radius: 8px; padding: 9px 13px; font-size: 0.8rem; margin-top: 10px; display: none; }
+
+/* ── 提交 ── */
+.submit-wrap { padding: 0 16px 40px; }
+.submit-btn {
+  width: 100%; padding: 17px;
+  background: var(--blue); color: white; border: none; border-radius: 14px;
+  font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer;
+  transition: all .2s; letter-spacing: 0.04em; position: relative; overflow: hidden;
+}
+.submit-btn:active { transform: scale(.98); }
+.submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+.submit-btn.loading { color: transparent; }
+.submit-btn.loading::after {
+  content: ''; position: absolute;
+  width: 22px; height: 22px;
+  border: 3px solid rgba(255,255,255,.4); border-top-color: white;
+  border-radius: 50%; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+.uploading-text {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 10px;
+  display: none;
+}
+
+/* ── 成功畫面 ── */
+#success-screen {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100svh; padding: 40px 24px; text-align: center; animation: fadeIn .4s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+.success-circle {
+  width: 88px; height: 88px; background: var(--teal-lt); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 2.6rem;
+  margin-bottom: 22px; animation: pop .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+.success-title { font-size: 1.35rem; font-weight: 700; color: var(--teal); margin-bottom: 10px; }
+.success-sub   { font-size: 0.88rem; color: var(--muted); line-height: 1.6; max-width: 260px; }
+.success-room  { margin-top: 20px; padding: 9px 20px; background: var(--teal-lt); border-radius: 999px; font-size: 0.83rem; font-weight: 500; color: var(--teal); }
 </style>
 </head>
 <body>
 
 <div id="form-screen">
+
   <div class="header">
-    <div class="header-label">意見回饋</div>
-    <div class="header-room" id="room-name">載入中…</div>
-    <div class="header-sub">感謝您協助我們改善環境品質</div>
+    <div class="header-label">三總澎湖分院</div>
+    <div class="header-title">環境回報系統</div>
+    <div class="header-room">
+      📍 <span class="room-chip" id="room-name">載入中…</span>
+    </div>
   </div>
+
+  <!-- 類型 -->
   <div class="card">
-    <div class="card-title">回饋類型</div>
+    <div class="card-title">回報類型 <span class="required-dot"></span></div>
     <div class="type-grid">
-      <button class="type-btn" data-type="清潔" data-cls="selected-clean" onclick="selectType(this)">
+      <button class="type-btn" data-type="清潔問題" data-cls="sel-clean" onclick="selectType(this)">
         <span class="icon">🧹</span><span class="label">清潔問題</span><span class="desc">髒污、異味<br>垃圾未清</span>
       </button>
-      <button class="type-btn" data-type="維修" data-cls="selected-repair" onclick="selectType(this)">
-        <span class="icon">🔧</span><span class="label">維修需求</span><span class="desc">設備損壞<br>燈光、門窗</span>
+      <button class="type-btn" data-type="設備故障" data-cls="sel-repair" onclick="selectType(this)">
+        <span class="icon">🔧</span><span class="label">設備故障</span><span class="desc">設備損壞<br>燈光、門窗</span>
       </button>
-      <button class="type-btn" data-type="其他意見" data-cls="selected-complaint" onclick="selectType(this)">
-        <span class="icon">💬</span><span class="label">其他意見</span><span class="desc">服務建議<br>環境改善</span>
+      <button class="type-btn" data-type="安全疑慮" data-cls="sel-safety" onclick="selectType(this)">
+        <span class="icon">🚨</span><span class="label">安全疑慮</span><span class="desc">安全風險<br>需立即處理</span>
       </button>
-      <button class="type-btn" data-type="緊急通報" data-cls="selected-other" onclick="selectType(this)">
-        <span class="icon">🚨</span><span class="label">緊急通報</span><span class="desc">安全疑慮<br>需立即處理</span>
+      <button class="type-btn" data-type="其他" data-cls="sel-other" onclick="selectType(this)">
+        <span class="icon">💬</span><span class="label">其他</span><span class="desc">其他建議<br>環境改善</span>
       </button>
     </div>
-  </div>
-  <div class="card">
-    <div class="card-title">緊急程度</div>
-    <div class="urgency-row">
-      <button class="urgency-btn" data-urgency="一般" onclick="selectUrgency(this)">一般</button>
-      <button class="urgency-btn" data-urgency="盡快處理" onclick="selectUrgency(this)">盡快處理</button>
-      <button class="urgency-btn" data-urgency="非常緊急" onclick="selectUrgency(this)">非常緊急</button>
+    <div class="other-wrap" id="other-wrap">
+      <input type="text" class="other-input" id="other-text" placeholder="請說明其他類型…">
     </div>
+    <div class="err-msg" id="type-err">請選擇回報類型</div>
   </div>
+
+  <!-- 問題描述 -->
   <div class="card">
-    <div class="card-title">說明（選填）</div>
-    <textarea id="message" placeholder="請描述問題狀況，例如：3號床旁邊的燈壞了" maxlength="300" oninput="updateCount()"></textarea>
-    <div class="char-count"><span id="char-count">0</span> / 300</div>
+    <div class="card-title">問題描述 <span class="required-dot"></span></div>
+    <textarea id="message" placeholder="請描述問題狀況，例如：走廊地板有積水…" maxlength="500" oninput="updateCount()"></textarea>
+    <div class="char-count"><span id="char-count">0</span> / 500</div>
+    <div class="err-msg" id="msg-err">請填寫問題描述</div>
   </div>
-  <div class="error-msg" id="error-msg"></div>
+
+  <!-- 上傳照片 -->
+  <div class="card">
+    <div class="card-title">
+      上傳照片
+      <span class="optional-tag">選填</span>
+    </div>
+
+    <!-- 上傳區（沒有照片時顯示） -->
+    <div class="photo-upload-area" id="upload-area">
+      <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+      <div class="upload-icon">📷</div>
+      <div class="upload-text">點擊拍照或選擇照片</div>
+      <div class="upload-hint">支援 JPG、PNG，檔案會自動壓縮</div>
+    </div>
+
+    <!-- 預覽（有照片時顯示） -->
+    <div id="preview-wrap" style="display:none">
+      <div class="photo-preview-wrap">
+        <img id="photo-preview" class="photo-preview" alt="預覽">
+        <button class="photo-remove" onclick="removePhoto()">✕</button>
+      </div>
+      <div class="photo-name" id="photo-name"></div>
+    </div>
+
+    <div class="compress-hint" id="compress-hint">⏳ 壓縮照片中…</div>
+  </div>
+
+  <!-- 聯繫電話 -->
+  <div class="card">
+    <div class="card-title">聯繫電話 <span class="optional-tag">選填</span></div>
+    <input type="tel" class="phone-input" id="phone" placeholder="方便我們聯繫您">
+    <div class="field-hint">填寫後工作人員可直接與您確認</div>
+  </div>
+
   <div class="submit-wrap">
-    <button class="submit-btn" id="submit-btn" onclick="submitForm()">送出回饋</button>
+    <button class="submit-btn" id="submit-btn" onclick="submitForm()">送出回報</button>
+    <div class="uploading-text" id="uploading-text">📤 照片上傳中，請稍候…</div>
   </div>
+
 </div>
 
 <div id="success-screen">
   <div class="success-circle">✓</div>
-  <div class="success-title">謝謝您的回饋！</div>
-  <div class="success-sub">我們已收到您的意見，相關人員將盡快處理。</div>
+  <div class="success-title">回報已送出！</div>
+  <div class="success-sub">感謝您的回報，相關人員將盡快處理，謝謝您協助改善環境品質。</div>
   <div class="success-room" id="success-room-label"></div>
 </div>
 
 <script>
 // ★ 換成你的 Apps Script URL
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzw3IkWiQ9OoQJQh6lo75LoTC-HjQVMHK3VsoHI5w8jLUWDWL4LIT-7OQ_pOCnJjOI3/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/這裡換成你的URL/exec";
 
 // 從 rooms.js 建立對照表
 const ROOM_MAP = {};
-ROOMS.forEach(r => { ROOM_MAP[r.code] = r.name; });
+if (typeof ROOMS !== "undefined") {
+  ROOMS.forEach(r => { ROOM_MAP[r.code] = r.name; });
+}
 
 const params   = new URLSearchParams(window.location.search);
 const roomCode = params.get("room") || "unknown";
-const roomName = ROOM_MAP[roomCode] || "未知區域（" + roomCode + "）";
+const roomName = ROOM_MAP[roomCode] || roomCode;
 document.getElementById("room-name").textContent = roomName;
-document.getElementById("success-room-label").textContent = roomName;
+document.getElementById("success-room-label").textContent = "📍 " + roomName;
 
-let selectedType    = "";
-let selectedUrgency = "一般";
-document.querySelector('.urgency-btn').classList.add('sel-normal');
+let selectedType = "";
+let photoBase64  = "";
+let photoName    = "";
+let photoMime    = "";
 
+// ── 類型選擇 ──────────────────────────────────────────────────
 function selectType(btn) {
   document.querySelectorAll('.type-btn').forEach(b => b.className = 'type-btn');
   btn.classList.add(btn.dataset.cls);
   selectedType = btn.dataset.type;
+  const ow = document.getElementById("other-wrap");
+  if (selectedType === "其他") { ow.classList.add("show"); document.getElementById("other-text").focus(); }
+  else ow.classList.remove("show");
+  document.getElementById("type-err").style.display = "none";
 }
-function selectUrgency(btn) {
-  document.querySelectorAll('.urgency-btn').forEach(b => b.className = 'urgency-btn');
-  selectedUrgency = btn.dataset.urgency;
-  if (selectedUrgency === "一般")       btn.classList.add('sel-normal');
-  if (selectedUrgency === "盡快處理")   btn.classList.add('sel-urgent');
-  if (selectedUrgency === "非常緊急")   btn.classList.add('sel-critical');
-}
+
 function updateCount() {
   document.getElementById("char-count").textContent = document.getElementById("message").value.length;
 }
+
+// ── 照片處理 ──────────────────────────────────────────────────
+function handlePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const hint = document.getElementById("compress-hint");
+  hint.style.display = "block";
+
+  // 壓縮圖片（限制長邊 1200px，品質 0.75）
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+
+      const mime = file.type || "image/jpeg";
+      const dataUrl = canvas.toDataURL(mime, 0.75);
+
+      // 取出 base64 部分（去掉 data:image/jpeg;base64, 前綴）
+      photoBase64 = dataUrl.split(",")[1];
+      photoName   = file.name;
+      photoMime   = mime;
+
+      // 顯示預覽
+      document.getElementById("photo-preview").src = dataUrl;
+      document.getElementById("photo-name").textContent = "📎 " + file.name;
+      document.getElementById("upload-area").style.display  = "none";
+      document.getElementById("preview-wrap").style.display = "block";
+      hint.style.display = "none";
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto() {
+  photoBase64 = ""; photoName = ""; photoMime = "";
+  document.getElementById("photo-input").value = "";
+  document.getElementById("upload-area").style.display  = "block";
+  document.getElementById("preview-wrap").style.display = "none";
+  document.getElementById("photo-name").textContent = "";
+}
+
+// ── 送出 ──────────────────────────────────────────────────────
 function submitForm() {
-  const errEl = document.getElementById("error-msg");
-  errEl.style.display = "none";
-  if (!selectedType) {
-    errEl.textContent = "請先選擇回饋類型";
-    errEl.style.display = "block";
-    return;
+  const msgEl   = document.getElementById("message");
+  const typeErr = document.getElementById("type-err");
+  const msgErr  = document.getElementById("msg-err");
+  const btn     = document.getElementById("submit-btn");
+  const upText  = document.getElementById("uploading-text");
+
+  typeErr.style.display = "none";
+  msgErr.style.display  = "none";
+  msgEl.classList.remove("err");
+
+  let valid = true;
+  if (!selectedType) { typeErr.style.display = "block"; valid = false; }
+  const msg = msgEl.value.trim();
+  if (!msg) { msgErr.style.display = "block"; msgEl.classList.add("err"); valid = false; }
+  if (!valid) return;
+
+  let typeVal = selectedType;
+  if (typeVal === "其他") {
+    const ot = document.getElementById("other-text").value.trim();
+    if (ot) typeVal = "其他：" + ot;
   }
-  const typeStr = selectedType + (selectedUrgency !== "一般" ? "（" + selectedUrgency + "）" : "");
-  const submitBtn = document.getElementById("submit-btn");
-  submitBtn.classList.add("loading");
-  submitBtn.disabled = true;
-  const formData = new FormData();
-  formData.append("room",    roomCode);
-  formData.append("type",    typeStr);
-  formData.append("message", document.getElementById("message").value.trim() || "(未填寫)");
-  fetch(SCRIPT_URL, { method: "POST", body: formData })
+
+  const phone = document.getElementById("phone").value.trim();
+
+  btn.classList.add("loading");
+  btn.disabled = true;
+  if (photoBase64) upText.style.display = "block";
+
+  const fd = new FormData();
+  fd.append("room",    roomCode);
+  fd.append("type",    typeVal);
+  fd.append("message", msg);
+  if (phone)       fd.append("phone",     phone);
+  if (photoBase64) {
+    fd.append("photo",     photoBase64);
+    fd.append("photoName", photoName);
+    fd.append("photoMime", photoMime);
+  }
+
+  fetch(SCRIPT_URL, { method: "POST", body: fd })
     .then(r => r.json())
     .then(data => {
       if (data.status === "ok") {
-        document.getElementById("form-screen").style.display = "none";
-        const s = document.getElementById("success-screen");
-        s.style.display = "flex";
-      } else { throw new Error(); }
+        document.getElementById("form-screen").style.display  = "none";
+        document.getElementById("success-screen").style.display = "flex";
+      } else throw new Error(data.message);
     })
     .catch(() => {
-      submitBtn.classList.remove("loading");
-      submitBtn.disabled = false;
-      errEl.textContent = "送出失敗，請稍後再試。";
-      errEl.style.display = "block";
+      btn.classList.remove("loading");
+      btn.disabled = false;
+      upText.style.display = "none";
+      alert("送出失敗，請稍後再試。");
     });
 }
 </script>
