@@ -384,9 +384,7 @@ tr:hover td{background:#fafcff}
       <button class="pw-btn" onclick="changePassword()">更新密碼</button>
       <div class="pw-msg" id="pw-msg"></div>
     </div>
-    <div class="admin-card">
-      <div class="warn-box">⚠️ 預設密碼請盡快修改！<br>admin/admin123 · clean/clean123 · repair/repair123 · nursing/nurse123</div>
-    </div>
+
   </div>
 </div>
 
@@ -414,7 +412,7 @@ tr:hover td{background:#fafcff}
 
 <script>
 // ★ 換成你的 Apps Script URL
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsu7zOdVA0pI9QFz0PRSgw3aZIfgjasfLY74OpJQhG0soE09kWczBQKLtB-hqdyeso/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/這裡換成你的URL/exec";
 
 let currentRole = "";
 let currentUser = "";
@@ -447,11 +445,9 @@ function enterMain(role,label){
   document.getElementById("login-page").style.display="none";
   document.getElementById("main-page").style.display="flex";
   document.getElementById("role-badge").textContent=label;
-  if(role==="admin"){
-    document.getElementById("btn-stats").style.display="";
-    document.getElementById("btn-rooms").style.display="";
-    document.getElementById("btn-admin").style.display="";
-  }
+  ["btn-stats","btn-rooms","btn-admin"].forEach(id=>{
+    document.getElementById(id).style.display = role==="admin" ? "" : "none";
+  });
   loadRecords();
 }
 
