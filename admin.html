@@ -208,7 +208,7 @@ tr:hover td{background:#fafcff}
 .chart-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
 .chart-title{font-size:0.85rem;font-weight:700;margin-bottom:14px}
 .chart-wrap{position:relative;height:200px}
-.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
 .summary-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;text-align:center}
 .summary-lbl{font-size:0.72rem;color:var(--muted);margin-bottom:4px}
 .summary-val{font-size:1.5rem;font-weight:700}
@@ -309,12 +309,12 @@ tr:hover td{background:#fafcff}
         <table>
           <thead>
             <tr>
-              <th>時間</th><th>地點</th><th>類型</th><th>說明</th>
-              <th>照片</th><th>狀態</th><th>負責</th><th>操作</th>
+              <th>回報時間</th><th>地點</th><th>類型</th><th>說明</th>
+              <th>照片</th><th>狀態</th><th>完成時間</th><th>負責</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="records-body">
-            <tr><td colspan="8" class="empty-td"><div class="loading"><div class="spinner"></div>載入中…</div></td></tr>
+            <tr><td colspan="9" class="empty-td"><div class="loading"><div class="spinner"></div>載入中…</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -327,6 +327,7 @@ tr:hover td{background:#fafcff}
       <div class="summary-card"><div class="summary-lbl">總回饋數</div><div class="summary-val c-blue"  id="s-total">—</div></div>
       <div class="summary-card"><div class="summary-lbl">完成率</div>  <div class="summary-val c-green" id="s-rate">—</div></div>
       <div class="summary-card"><div class="summary-lbl">待處理中</div><div class="summary-val c-red"   id="s-pending">—</div></div>
+      <div class="summary-card"><div class="summary-lbl">平均處理時長</div><div class="summary-val c-amber" id="s-avgtime">—</div></div>
     </div>
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">近期每日回饋數量</div><div class="chart-wrap"><canvas id="chart-daily"></canvas></div></div>
@@ -476,7 +477,7 @@ function switchTab(tab,btn){
 // ── RECORDS ───────────────────────────────────────────────────
 function loadRecords(){
   document.getElementById("records-body").innerHTML=
-    '<tr><td colspan="8" class="empty-td"><div class="loading"><div class="spinner"></div>載入中…</div></td></tr>';
+    '<tr><td colspan="9" class="empty-td"><div class="loading"><div class="spinner"></div>載入中…</div></td></tr>';
   get({action:"getRecords",role:currentRole})
     .then(d=>{allRecords=d.records;renderRecords();})
     .catch(()=>showToast("載入失敗，請重試","err"));
@@ -501,7 +502,7 @@ function renderRecords(){
   });
 
   const tbody=document.getElementById("records-body");
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="8" class="empty-td">沒有符合的記錄</td></tr>';return;}
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="9" class="empty-td">沒有符合的記錄</td></tr>';return;}
 
   tbody.innerHTML=filtered.map(r=>{
     const tc=r.type.indexOf("清潔")!==-1?"b-clean":r.type.indexOf("設備")!==-1?"b-fix":r.type.indexOf("安全")!==-1?"b-urg":r.type.indexOf("其他")!==-1?"b-nurse":"b-other";
@@ -528,10 +529,26 @@ function renderRecords(){
     else if(r.status==="處理中") acts=`<button class="act-btn btn-done" onclick="updStat(${r.row},'已完成',this)">標記完成</button>`;
     else                          acts=`<span style="font-size:0.72rem;color:var(--muted)">已結案</span>`;
 
+    // 格式化回報時間
     const t=new Date(r.time);
     const timeStr=isNaN(t)?r.time:
       (t.getMonth()+1).toString().padStart(2,"0")+"/"+t.getDate().toString().padStart(2,"0")+" "+
       t.getHours().toString().padStart(2,"0")+":"+t.getMinutes().toString().padStart(2,"0");
+
+    // 格式化完成時間
+    let doneStr = "—";
+    if(r.doneTime){
+      const dt=new Date(r.doneTime);
+      doneStr = isNaN(dt) ? r.doneTime :
+        (dt.getMonth()+1).toString().padStart(2,"0")+"/"+dt.getDate().toString().padStart(2,"0")+" "+
+        dt.getHours().toString().padStart(2,"0")+":"+dt.getMinutes().toString().padStart(2,"0");
+    }
+
+    // 狀態變更記錄 tooltip
+    const logTitle = r.statusLog ? r.statusLog.replace(/"/g,"'") : "";
+    const doneCell = r.doneTime
+      ? `<td style="white-space:nowrap;font-size:0.78rem;color:var(--green)" title="${logTitle}">✓ ${doneStr}</td>`
+      : `<td style="font-size:0.78rem;color:var(--muted)" title="${logTitle}">${doneStr}</td>`;
 
     return `<tr>
       <td style="color:var(--muted);white-space:nowrap;font-size:0.78rem">${timeStr}</td>
@@ -544,6 +561,7 @@ function renderRecords(){
         <option ${r.status==="處理中"?"selected":""}>處理中</option>
         <option ${r.status==="已完成"?"selected":""}>已完成</option>
       </select></td>
+      ${doneCell}
       <td style="color:var(--muted)">${r.owner}</td>
       <td>${acts}</td>
     </tr>`;
@@ -622,6 +640,7 @@ function renderStats(s){
   document.getElementById("s-total").textContent=total;
   document.getElementById("s-rate").textContent=total?Math.round(done/total*100)+"%":"—";
   document.getElementById("s-pending").textContent=pending;
+  document.getElementById("s-avgtime").textContent=s.avgTime||"—";
   if(dailyChart)dailyChart.destroy();
   dailyChart=new Chart(document.getElementById("chart-daily"),{
     type:"bar",
