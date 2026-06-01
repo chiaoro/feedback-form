@@ -334,6 +334,10 @@ tr:hover td{background:#fafcff}
       <div class="chart-card"><div class="chart-title">類型分佈</div><div class="chart-wrap"><canvas id="chart-type"></canvas></div></div>
     </div>
     <div class="chart-card"><div class="chart-title">回饋最多的地點 Top 5</div><div id="top-rooms" style="margin-top:8px"></div></div>
+    <div class="chart-card" style="margin-top:16px">
+      <div class="chart-title">各類型平均處理時長</div>
+      <div id="avg-by-type" style="margin-top:8px"></div>
+    </div>
   </div>
 
   <!-- 房間管理 + QR -->
@@ -641,6 +645,35 @@ function renderStats(s){
   document.getElementById("s-rate").textContent=total?Math.round(done/total*100)+"%":"—";
   document.getElementById("s-pending").textContent=pending;
   document.getElementById("s-avgtime").textContent=s.avgTime||"—";
+
+  // 各類型平均處理時長
+  const typeColors = {
+    "清潔問題": "var(--teal)",
+    "設備故障": "var(--blue)",
+    "安全疑慮": "var(--red)",
+    "其他":     "var(--purple)"
+  };
+  const avgByType = s.avgByType || {};
+  const typeKeys  = Object.keys(avgByType);
+  const maxMin    = typeKeys.length ? Math.max(...typeKeys.map(k=>avgByType[k].minutes||0)) : 1;
+
+  document.getElementById("avg-by-type").innerHTML = typeKeys.length === 0
+    ? '<div style="color:var(--muted);font-size:0.83rem;padding:16px 0">尚無已完成的案件資料</div>'
+    : typeKeys.map(type => {
+        const info  = avgByType[type];
+        const color = typeColors[type] || "var(--gray)";
+        const pct   = maxMin > 0 ? Math.round((info.minutes||0) / maxMin * 100) : 0;
+        return `<div class="top-item" style="margin-bottom:14px">
+          <div style="min-width:72px;font-size:0.8rem;font-weight:500;color:var(--text)">${type}</div>
+          <div style="flex:1">
+            <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden;margin-bottom:4px">
+              <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .5s ease"></div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--muted)">${info.count} 件已完成</div>
+          </div>
+          <div style="min-width:80px;text-align:right;font-size:0.83rem;font-weight:700;color:${color}">${info.avgText}</div>
+        </div>`;
+      }).join("");
   if(dailyChart)dailyChart.destroy();
   dailyChart=new Chart(document.getElementById("chart-daily"),{
     type:"bar",
