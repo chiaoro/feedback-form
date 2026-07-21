@@ -558,7 +558,7 @@ function renderRecords(){
       <td style="color:var(--muted);white-space:nowrap;font-size:0.78rem">${timeStr}</td>
       <td style="white-space:nowrap">${r.roomName||r.roomCode}</td>
       <td><span class="badge ${tc}">${r.type}</span></td>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.message}">${r.message}</td>
+      <td style="min-width:180px;max-width:260px;white-space:normal;overflow-wrap:anywhere;line-height:1.5;vertical-align:top" title="${r.message}">${r.message}</td>
       <td>${photoCell}</td>
       <td><select class="status-sel ${sc}" onchange="updStat(${r.row},this.value,this)">
         <option ${r.status==="待處理"?"selected":""}>待處理</option>
