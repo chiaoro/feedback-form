@@ -421,6 +421,8 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsu7zOdVA0pI9QFz0PR
 
 let currentRole = "";
 let currentUser = "";
+let currentToken = "";
+const SESSION_EXPIRED = "登入已逾時，請重新登入";
 let allRecords  = [];
 let sf = "all";
 let tf = "";
@@ -436,7 +438,8 @@ function doLogin() {
   btn.disabled=true;btn.textContent="登入中…";errEl.style.display="none";
   post({action:"login",username:user,password:pass})
     .then(d=>{
-      currentRole=d.role;currentUser=user;
+      currentRole=d.role;currentUser=user;currentToken=d.token||"";
+      sessionStorage.setItem("token",currentToken);
       sessionStorage.setItem("role",d.role);
       sessionStorage.setItem("user",user);
       sessionStorage.setItem("label",d.label);
@@ -457,7 +460,9 @@ function enterMain(role,label){
 }
 
 function logout(){
-  sessionStorage.clear();currentRole="";currentUser="";
+  // 通知後端作廢 token（失敗也不影響登出）
+  if(currentToken) post({action:"logout"}).catch(()=>{});
+  sessionStorage.clear();currentRole="";currentUser="";currentToken="";
   document.getElementById("main-page").style.display="none";
   document.getElementById("login-page").style.display="flex";
   document.getElementById("username").value="";
@@ -778,13 +783,21 @@ function esc(v){
 // 產生可安全放進 onclick 的 JS 字串參數
 function jsArg(v){return esc(JSON.stringify(String(v==null?"":v)));}
 function get(params){
+  if(currentToken)params=Object.assign({token:currentToken},params);
   const qs=Object.entries(params).map(([k,v])=>k+"="+encodeURIComponent(v)).join("&");
-  return fetch(SCRIPT_URL+"?"+qs).then(r=>r.json()).then(d=>{if(d.status!=="ok")throw new Error(d.message);return d;});
+  return fetch(SCRIPT_URL+"?"+qs).then(r=>r.json()).then(checkResp);
 }
 function post(params){
+  if(currentToken)params=Object.assign({token:currentToken},params);
   const fd=new FormData();
   Object.entries(params).forEach(([k,v])=>fd.append(k,v));
-  return fetch(SCRIPT_URL,{method:"POST",body:fd}).then(r=>r.json()).then(d=>{if(d.status!=="ok")throw new Error(d.message);return d;});
+  return fetch(SCRIPT_URL,{method:"POST",body:fd}).then(r=>r.json()).then(checkResp);
+}
+// 後端回應檢查；登入逾時時自動回到登入畫面
+function checkResp(d){
+  if(d.status==="ok")return d;
+  if(d.message===SESSION_EXPIRED&&currentUser){logout();showLoginErr(SESSION_EXPIRED);}
+  throw new Error(d.message);
 }
 function showToast(msg,type="ok"){
   const t=document.getElementById("toast");
@@ -796,7 +809,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   const role=sessionStorage.getItem("role");
   const user=sessionStorage.getItem("user");
   const label=sessionStorage.getItem("label");
-  if(role&&user){currentRole=role;currentUser=user;enterMain(role,label);}
+  if(role&&user){currentRole=role;currentUser=user;currentToken=sessionStorage.getItem("token")||"";enterMain(role,label);}
 });
 </script>
 </body>
