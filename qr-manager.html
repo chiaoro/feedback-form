@@ -364,13 +364,18 @@ function renderRoomList() {
   updateCount();
 }
 
+// 顯示前跳脫 HTML，避免房間資料中的標籤或程式碼被執行
+function esc(v) {
+  return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
 function appendRow(list, code, name, idx) {
   const row = document.createElement("div");
   row.className = "room-row";
   row.dataset.idx = idx;
   row.innerHTML = `
-    <input type="text" class="room-code" placeholder="ward-301" value="${code}">
-    <input type="text" class="room-name" placeholder="病房 301" value="${name}">
+    <input type="text" class="room-code" placeholder="ward-301" value="${esc(code)}">
+    <input type="text" class="room-name" placeholder="病房 301" value="${esc(name)}">
     <button class="del-btn" onclick="deleteRow(this)" title="刪除">✕</button>
   `;
   list.appendChild(row);

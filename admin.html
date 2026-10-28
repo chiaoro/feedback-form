@@ -518,11 +518,8 @@ function renderRecords(){
       // 把 Drive 網址轉成可直接顯示的縮圖網址
       const fileId = extractDriveId(r.photoUrl);
       const thumbUrl = fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w80` : "";
-      const escapedUrl = r.photoUrl.replace(/'/g,"\\'");
-      const escapedRoom = (r.roomName||r.roomCode).replace(/'/g,"\\'");
-      const escapedTime = String(r.time).replace(/'/g,"\\'");
-      photoCell = `<button class="photo-thumb-btn" onclick="openPhotoModal('${escapedUrl}','${escapedRoom}','${escapedTime}')" title="點擊查看照片">
-        ${thumbUrl ? `<img src="${thumbUrl}" alt="照片" onerror="this.parentElement.innerHTML='📷'">` : '📷'}
+      photoCell = `<button class="photo-thumb-btn" onclick="openPhotoModal(${jsArg(r.photoUrl)},${jsArg(r.roomName||r.roomCode)},${jsArg(r.time)})" title="點擊查看照片">
+        ${thumbUrl ? `<img src="${esc(thumbUrl)}" alt="照片" onerror="this.parentElement.innerHTML='📷'">` : '📷'}
       </button>`;
     } else {
       photoCell = `<span class="no-photo">—</span>`;
@@ -535,7 +532,7 @@ function renderRecords(){
 
     // 格式化回報時間
     const t=new Date(r.time);
-    const timeStr=isNaN(t)?r.time:
+    const timeStr=isNaN(t)?esc(r.time):
       (t.getMonth()+1).toString().padStart(2,"0")+"/"+t.getDate().toString().padStart(2,"0")+" "+
       t.getHours().toString().padStart(2,"0")+":"+t.getMinutes().toString().padStart(2,"0");
 
@@ -543,22 +540,22 @@ function renderRecords(){
     let doneStr = "—";
     if(r.doneTime){
       const dt=new Date(r.doneTime);
-      doneStr = isNaN(dt) ? r.doneTime :
+      doneStr = isNaN(dt) ? esc(r.doneTime) :
         (dt.getMonth()+1).toString().padStart(2,"0")+"/"+dt.getDate().toString().padStart(2,"0")+" "+
         dt.getHours().toString().padStart(2,"0")+":"+dt.getMinutes().toString().padStart(2,"0");
     }
 
     // 狀態變更記錄 tooltip
-    const logTitle = r.statusLog ? r.statusLog.replace(/"/g,"'") : "";
+    const logTitle = esc(r.statusLog);
     const doneCell = r.doneTime
       ? `<td style="white-space:nowrap;font-size:0.78rem;color:var(--green)" title="${logTitle}">✓ ${doneStr}</td>`
       : `<td style="font-size:0.78rem;color:var(--muted)" title="${logTitle}">${doneStr}</td>`;
 
     return `<tr>
       <td style="color:var(--muted);white-space:nowrap;font-size:0.78rem">${timeStr}</td>
-      <td style="white-space:nowrap">${r.roomName||r.roomCode}</td>
-      <td><span class="badge ${tc}">${r.type}</span></td>
-      <td style="min-width:180px;max-width:260px;white-space:normal;overflow-wrap:anywhere;line-height:1.5;vertical-align:top" title="${r.message}">${r.message}</td>
+      <td style="white-space:nowrap">${esc(r.roomName||r.roomCode)}</td>
+      <td><span class="badge ${tc}">${esc(r.type)}</span></td>
+      <td style="min-width:180px;max-width:260px;white-space:normal;overflow-wrap:anywhere;line-height:1.5;vertical-align:top" title="${esc(r.message)}">${esc(r.message)}</td>
       <td>${photoCell}</td>
       <td><select class="status-sel ${sc}" onchange="updStat(${r.row},this.value,this)">
         <option ${r.status==="待處理"?"selected":""}>待處理</option>
@@ -566,7 +563,7 @@ function renderRecords(){
         <option ${r.status==="已完成"?"selected":""}>已完成</option>
       </select></td>
       ${doneCell}
-      <td style="color:var(--muted)">${r.owner}</td>
+      <td style="color:var(--muted)">${esc(r.owner)}</td>
       <td>${acts}</td>
     </tr>`;
   }).join("");
@@ -592,7 +589,7 @@ function openPhotoModal(photoUrl, roomName, time){
   document.getElementById("modal-img").src=previewUrl;
   document.getElementById("modal-title").textContent="📷 "+roomName;
   document.getElementById("modal-info").textContent=time;
-  document.getElementById("modal-open-link").href=photoUrl;
+  document.getElementById("modal-open-link").href=/^https:\/\//.test(photoUrl)?photoUrl:"#";
   document.getElementById("photo-modal").classList.add("show");
   document.body.style.overflow="hidden";
 }
@@ -664,14 +661,14 @@ function renderStats(s){
         const color = typeColors[type] || "var(--gray)";
         const pct   = maxMin > 0 ? Math.round((info.minutes||0) / maxMin * 100) : 0;
         return `<div class="top-item" style="margin-bottom:14px">
-          <div style="min-width:72px;font-size:0.8rem;font-weight:500;color:var(--text)">${type}</div>
+          <div style="min-width:72px;font-size:0.8rem;font-weight:500;color:var(--text)">${esc(type)}</div>
           <div style="flex:1">
             <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden;margin-bottom:4px">
               <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .5s ease"></div>
             </div>
-            <div style="font-size:0.72rem;color:var(--muted)">${info.count} 件已完成</div>
+            <div style="font-size:0.72rem;color:var(--muted)">${esc(info.count)} 件已完成</div>
           </div>
-          <div style="min-width:80px;text-align:right;font-size:0.83rem;font-weight:700;color:${color}">${info.avgText}</div>
+          <div style="min-width:80px;text-align:right;font-size:0.83rem;font-weight:700;color:${color}">${esc(info.avgText)}</div>
         </div>`;
       }).join("");
   if(dailyChart)dailyChart.destroy();
@@ -706,7 +703,7 @@ function renderStats(s){
   const max=sorted[0]?sorted[0][1]:1;
   document.getElementById("top-rooms").innerHTML=sorted.map(([room,cnt])=>`
     <div class="top-item">
-      <div class="top-name">${room}</div>
+      <div class="top-name">${esc(room)}</div>
       <div class="top-bar-wrap"><div class="top-bar" style="width:${Math.round(cnt/max*100)}%"></div></div>
       <div class="top-count">${cnt}</div>
     </div>`).join("");
@@ -722,8 +719,8 @@ function loadRooms(){
 function addRoomRow(code="",name=""){
   const l=document.getElementById("room-list");
   const r=document.createElement("div");r.className="room-row";
-  r.innerHTML=`<input type="text" class="room-code" placeholder="ward-301" value="${code}">
-    <input type="text" class="room-name" placeholder="病房 301" value="${name}">
+  r.innerHTML=`<input type="text" class="room-code" placeholder="ward-301" value="${esc(code)}">
+    <input type="text" class="room-name" placeholder="病房 301" value="${esc(name)}">
     <button class="del-btn" onclick="this.closest('.room-row').remove();updateRoomCount()">✕</button>`;
   l.appendChild(r);updateRoomCount();
 }
@@ -774,6 +771,12 @@ function changePassword(){
 function showPwMsg(t,m){const e=document.getElementById("pw-msg");e.className="pw-msg "+t;e.textContent=m;e.style.display="block";setTimeout(()=>e.style.display="none",4000);}
 
 // ── UTILS ─────────────────────────────────────────────────────
+// 顯示前跳脫 HTML，避免回饋內容中的標籤或程式碼被執行
+function esc(v){
+  return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+// 產生可安全放進 onclick 的 JS 字串參數
+function jsArg(v){return esc(JSON.stringify(String(v==null?"":v)));}
 function get(params){
   const qs=Object.entries(params).map(([k,v])=>k+"="+encodeURIComponent(v)).join("&");
   return fetch(SCRIPT_URL+"?"+qs).then(r=>r.json()).then(d=>{if(d.status!=="ok")throw new Error(d.message);return d;});
