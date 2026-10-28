@@ -487,7 +487,7 @@ function switchTab(tab,btn){
 function loadRecords(){
   document.getElementById("records-body").innerHTML=
     '<tr><td colspan="9" class="empty-td"><div class="loading"><div class="spinner"></div>載入中…</div></td></tr>';
-  get({action:"getRecords",role:currentRole})
+  post({action:"getRecords"})
     .then(d=>{allRecords=d.records;renderRecords();})
     .catch(()=>showToast("載入失敗，請重試","err"));
 }
@@ -628,14 +628,14 @@ function setTF(val,btn){
 
 function updStat(row,status,el){
   if(el)el.disabled=true;
-  post({action:"updateStatus",row:row,status:status,role:currentRole})
+  post({action:"updateStatus",row:row,status:status})
     .then(()=>{showToast("已更新為「"+status+"」","ok");loadRecords();})
     .catch(e=>{showToast(e.message||"更新失敗","err");if(el)el.disabled=false;});
 }
 
 // ── STATS ─────────────────────────────────────────────────────
 function loadStats(){
-  get({action:"getStats",role:currentRole})
+  post({action:"getStats"})
     .then(d=>renderStats(d.stats))
     .catch(()=>showToast("統計載入失敗","err"));
 }
